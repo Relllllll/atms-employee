@@ -3,6 +3,7 @@ import Root from "./layout/Root/index.jsx";
 import Loading from "./pages/Loading/Loading.jsx";
 import FaceRecog from "./pages/FaceRecog/FaceRecog.jsx";
 import Profile from "./pages/Profile/Profile";
+import { FirebaseProvider } from "./config/FirebaseProvider.jsx";
 
 const router = createBrowserRouter([
     {
@@ -26,7 +27,11 @@ const router = createBrowserRouter([
 ]);
 
 const App = () => {
-    return <RouterProvider router={router} />;
+    return (
+        <FirebaseProvider> {/* Wrap your entire application with FirebaseProvider */}
+            <RouterProvider router={router} />
+        </FirebaseProvider>
+    )
 };
 
 export default App;
