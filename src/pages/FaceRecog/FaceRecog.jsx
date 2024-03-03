@@ -4,6 +4,8 @@ import Webcam from "react-webcam";
 import * as faceapi from "face-api.js";
 import { getDatabase, ref, onValue } from "firebase/database";
 import { database, storage } from "../../firebase";
+import "../FaceRecog/FaceRecog.css"
+import logo from "/logo.png"
 
 const FaceRecog = () => {
     const videoRef = useRef();
@@ -202,10 +204,18 @@ const FaceRecog = () => {
     };
 
     return (
-        <div>
-            <Webcam ref={videoRef} />
-            {showNoFaceMessage && <p>No user detected</p>}
+    <div className="faceRecog">
+        <div className="top-logo-container">
+                <div className="top-logo-container-yellow">
+                    <img src={logo} className="top-logo" />
+                </div>
+            </div>
+        <div className="webcam-container">
+            <Webcam ref={videoRef} className="webcam" />
         </div>
+        {showNoFaceMessage && (
+                <p className="no-face-message">No user detected</p>)}
+    </div>
     );
 };
 
