@@ -104,29 +104,31 @@ const Profile = () => {
 
             // Check if the current hour is within work hours (8 AM to 5 PM)
             if (currentHour >= 8 && currentHour <= 17) {
-                setAttendanceStatus("Present");
-                console.log("Present");
+                setAttendanceStatus("Present", () => {
+                    console.log("Present");
 
-                const timeIn = new Date().toISOString();
-                const timeOut = null;
+                    const timeIn = new Date().toISOString();
+                    const timeOut = null;
 
-                updateAttendanceInDatabase(
-                    userId,
-                    currentDate,
-                    attendanceStatus,
-                    timeIn,
-                    timeOut
-                );
+                    updateAttendanceInDatabase(
+                        userId,
+                        currentDate,
+                        attendanceStatus, // Using the updated attendanceStatus from the state
+                        timeIn,
+                        timeOut
+                    );
+                });
             } else {
-                setAttendanceStatus("Absent");
-                console.log("Absent");
-                updateAttendanceInDatabase(
-                    userId,
-                    currentDate,
-                    attendanceStatus,
-                    null,
-                    null
-                );
+                setAttendanceStatus("Absent", () => {
+                    console.log("Absent");
+                    updateAttendanceInDatabase(
+                        userId,
+                        currentDate,
+                        attendanceStatus, // Using the updated attendanceStatus from the state
+                        null,
+                        null
+                    );
+                });
             }
         }
     };
