@@ -101,37 +101,36 @@ const Profile = () => {
         if (employeeData) {
             const currentDate = new Date().toISOString().split("T")[0];
             const currentHour = new Date().getHours();
+            let newAttendanceStatus;
 
             // Check if the current hour is within work hours (8 AM to 5 PM)
             if (currentHour >= 8 && currentHour <= 17) {
-                setAttendanceStatus("Present", () => {
-                    console.log("Present");
-
-                    const timeIn = new Date().toISOString();
-                    const timeOut = null;
-
-                    updateAttendanceInDatabase(
-                        userId,
-                        currentDate,
-                        attendanceStatus, // Using the updated attendanceStatus from the state
-                        timeIn,
-                        timeOut
-                    );
-                });
+                newAttendanceStatus = "Present";
+                console.log("Present");
             } else {
-                setAttendanceStatus("Absent", () => {
-                    console.log("Absent");
-                    updateAttendanceInDatabase(
-                        userId,
-                        currentDate,
-                        attendanceStatus, // Using the updated attendanceStatus from the state
-                        null,
-                        null
-                    );
-                });
+                newAttendanceStatus = "Absent";
+                console.log("Absent");
             }
+
+            setAttendanceStatus(newAttendanceStatus);
         }
     };
+
+    useEffect(() => {
+        if (attendanceStatus && userId && employeeData) {
+            const currentDate = new Date().toISOString().split("T")[0];
+            const timeIn = new Date().toISOString();
+            const timeOut = null;
+
+            updateAttendanceInDatabase(
+                userId,
+                currentDate,
+                attendanceStatus,
+                timeIn,
+                timeOut
+            );
+        }
+    }, [attendanceStatus, userId, employeeData]);
 
     return (
         <div>
