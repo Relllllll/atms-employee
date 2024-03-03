@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ClipLoader from "react-spinners/ClipLoader";
+import "../Loading/Loading.css"
 
 const Loading = () => {
     const navigate = useNavigate();
@@ -15,7 +16,7 @@ const Loading = () => {
     return (
         <div className="loading">
             <img src="/logo.png" className="loading__img" />
-            <ClipLoader color="#f7b137" size={50} />
+            <ClipLoader color="#f7b137" size={50} className="clip-loader"/>
         </div>
     );
 };

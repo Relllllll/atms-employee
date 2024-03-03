@@ -1,0 +1,19 @@
+.loading {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+.loading__img{
+    
+    width: 8.75rem;
+    height: 8.75rem;
+}
+.clip-loader {
+    margin-top: 200px; /* Adjust margin-top as needed */
+}
