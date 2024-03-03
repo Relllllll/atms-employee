@@ -11,10 +11,15 @@ const FaceRecog = () => {
     const [recognizedName, setRecognizedName] = useState("");
     const [attendanceStatus, setAttendanceStatus] = useState({});
     const navigate = useNavigate();
+    let recognitionInterval;
 
     useEffect(() => {
         startVideo();
         loadModels();
+
+        return () => {
+            stopRecognition();
+        };
     }, []);
 
     const startVideo = () => {
@@ -45,48 +50,72 @@ const FaceRecog = () => {
     };
 
     const startFaceRecognition = async () => {
-        setInterval(async () => {
-            try {
-                const video = videoRef.current.video;
+        // Ensure the recognitionInterval is not already running
+        if (!recognitionInterval) {
+            recognitionInterval = setInterval(async () => {
+                try {
+                    // Check if videoRef.current is defined and if it has a video property
+                    if (videoRef.current && videoRef.current.video) {
+                        const video = videoRef.current.video;
 
-                // Check if the video stream is loaded
-                if (video.readyState === 4) {
-                    console.log("Video stream is loaded");
-                    const canvas = faceapi.createCanvasFromMedia(video);
-                    const displaySize = {
-                        width: video.width,
-                        height: video.height,
-                    };
-                    faceapi.matchDimensions(canvas, displaySize);
+                        // Check if the video stream is loaded
+                        if (video.readyState === 4) {
+                            console.log("Video stream is loaded");
+                            const canvas = faceapi.createCanvasFromMedia(video);
+                            const displaySize = {
+                                width: video.width,
+                                height: video.height,
+                            };
+                            faceapi.matchDimensions(canvas, displaySize);
 
-                    const detections = await faceapi
-                        .detectAllFaces(video)
-                        .withFaceLandmarks()
-                        .withFaceDescriptors();
+                            const detections = await faceapi
+                                .detectAllFaces(video)
+                                .withFaceLandmarks()
+                                .withFaceDescriptors();
 
-                    console.log("Number of faces detected:", detections.length);
+                            console.log(
+                                "Number of faces detected:",
+                                detections.length
+                            );
 
-                    if (detections.length === 1) {
-                        const recognizedUserId = await getRecognizedUserId(
-                            detections[0].descriptor
-                        );
-                        if (recognizedUserId) {
-                            console.log(`Recognized user: ${recognizedUserId}`);
-                            navigate(`/profile/${recognizedUserId}`, {
-                                state: { userId: recognizedUserId },
-                            });
+                            if (detections.length === 1) {
+                                const recognizedUserId =
+                                    await getRecognizedUserId(
+                                        detections[0].descriptor
+                                    );
+                                if (recognizedUserId) {
+                                    console.log(
+                                        `Recognized user: ${recognizedUserId}`
+                                    );
+                                    navigate(`/profile/${recognizedUserId}`, {
+                                        state: { userId: recognizedUserId },
+                                    });
+
+                                    stopRecognition();
+                                }
+                            } else {
+                                console.log("No face detected");
+                                setShowNoFaceMessage(true);
+                                setRecognizedName("");
+                                setAttendanceStatus({});
+                            }
                         }
-                    } else {
-                        console.log("Video stream is not loaded");
-                        setShowNoFaceMessage(true);
-                        setRecognizedName("");
-                        setAttendanceStatus({});
                     }
+                } catch (error) {
+                    console.error("Error detecting face: ", error);
                 }
-            } catch (error) {
-                console.error("Error detecting face: ", error);
-            }
-        }, 500);
+            }, 500);
+        }
+    };
+
+    const stopRecognition = () => {
+        clearInterval(recognitionInterval);
+
+        const stream = videoRef.current && videoRef.current.srcObject;
+        if (stream) {
+            const tracks = stream.getTracks();
+            tracks.forEach((track) => track.stop());
+        }
     };
 
     const getRecognizedUserId = async (descriptor) => {
@@ -94,77 +123,78 @@ const FaceRecog = () => {
             const database = getDatabase();
             const employeesRef = ref(database, "employees");
 
-            const snapshotCallback = (snapshot) => {
-                const employees = snapshot.val();
+            return new Promise((resolve) => {
+                onValue(employeesRef, (snapshot) => {
+                    const employees = snapshot.val();
 
-                if (!employees) {
-                    console.log("No employees in the database");
-                    return null;
-                }
+                    if (!employees) {
+                        console.log("No employees in the database");
+                        resolve(null);
+                        return;
+                    }
 
-                console.log("Fetched employees from Firebase:", employees);
+                    console.log("Fetched employees from Firebase:", employees);
 
-                // Use Promise.all to map employees to an array of { userId, distance } objects
-                Promise.all(
-                    Object.keys(employees).map(async (userId) => {
-                        const employee = employees[userId];
+                    // Use Promise.all to map employees to an array of { userId, distance } objects
+                    Promise.all(
+                        Object.keys(employees).map(async (userId) => {
+                            const employee = employees[userId];
 
-                        // Fetch the image URL from the employee data
-                        const imageUrl = employee.image;
+                            // Fetch the image URL from the employee data
+                            const imageUrl = employee.image;
 
-                        // Download the image from Firebase Storage
-                        const response = await fetch(imageUrl);
-                        const blob = await response.blob();
+                            // Download the image from Firebase Storage
+                            const response = await fetch(imageUrl);
+                            const blob = await response.blob();
 
-                        // Convert the blob to an HTMLImageElement
-                        const img = await faceapi.bufferToImage(blob);
+                            // Convert the blob to an HTMLImageElement
+                            const img = await faceapi.bufferToImage(blob);
 
-                        // Detect face and generate descriptors from the downloaded image
-                        const detectedDescriptors = await faceapi
-                            .detectSingleFace(img)
-                            .withFaceLandmarks()
-                            .withFaceDescriptor();
+                            // Detect face and generate descriptors from the downloaded image
+                            const detectedDescriptors = await faceapi
+                                .detectSingleFace(img)
+                                .withFaceLandmarks()
+                                .withFaceDescriptor();
 
-                        // Compare descriptors
-                        const distance = faceapi.euclideanDistance(
-                            descriptor,
-                            detectedDescriptors?.descriptor || []
-                        );
+                            // Compare descriptors
+                            const distance = faceapi.euclideanDistance(
+                                descriptor,
+                                detectedDescriptors?.descriptor || []
+                            );
 
-                        return {
-                            userId,
-                            distance,
-                        };
-                    })
-                )
-                    .then((results) => {
-                        // Find the employee with the smallest distance (best match)
-                        const bestMatch = results.reduce(
-                            (minDistance, match) =>
-                                match.distance < minDistance.distance
-                                    ? match
-                                    : minDistance,
-                            results[0]
-                        );
+                            return {
+                                userId,
+                                distance,
+                            };
+                        })
+                    )
+                        .then((results) => {
+                            // Find the employee with the smallest distance (best match)
+                            const bestMatch = results.reduce(
+                                (minDistance, match) =>
+                                    match.distance < minDistance.distance
+                                        ? match
+                                        : minDistance,
+                                results[0]
+                            );
 
-                        // Adjust your threshold based on your use case
-                        if (bestMatch.distance < 0.6) {
-                            console.log(`Recognized user: ${bestMatch.userId}`);
-                            navigate(`/profile/${bestMatch.userId}`, {
-                                state: { userId: bestMatch.userId },
-                            });
-                        } else {
-                            console.log("No matching user found");
-                        }
-                    })
-                    .catch((error) => {
-                        console.error("Error processing matches:", error);
-                    });
-            };
-
-            onValue(employeesRef, snapshotCallback);
-
-            return null; // Modify this part based on your use case
+                            // Adjust your threshold based on your use case
+                            if (bestMatch.distance < 0.6) {
+                                console.log(
+                                    `Recognized user: ${bestMatch.userId}`
+                                );
+                                resolve(bestMatch.userId);
+                            } else {
+                                console.log("No matching user found");
+                                resolve(null);
+                            }
+                        })
+                        .catch((error) => {
+                            console.error("Error processing matches:", error);
+                            resolve(null);
+                        });
+                });
+            });
         } catch (error) {
             console.error("Error fetching users from Firebase:", error);
             return null;
