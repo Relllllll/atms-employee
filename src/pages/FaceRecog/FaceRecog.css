@@ -1,0 +1,17 @@
+.faceRecog {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0.5rem;
+}
+
+.faceRecog-video {
+    border-radius: 1rem;
+}
+
+.faceRecog-prompt {
+    font-weight: 600;
+}

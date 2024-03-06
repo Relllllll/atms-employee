@@ -203,9 +203,11 @@ const FaceRecog = () => {
     };
 
     return (
-        <div>
-            <Webcam ref={videoRef} />
-            {showNoFaceMessage && <p>No user detected</p>}
+        <div className="faceRecog">
+            <Webcam className="faceRecog-video" ref={videoRef} />
+            {showNoFaceMessage && (
+                <p className="faceRecog-prompt">No user detected</p>
+            )}
         </div>
     );
 };

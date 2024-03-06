@@ -7,12 +7,11 @@ import Profile from "./pages/Profile/Profile";
 const router = createBrowserRouter([
     {
         path: "/",
+        element: <Loading />,
+    },
+    {
         element: <Root />,
         children: [
-            {
-                path: "/",
-                element: <Loading />,
-            },
             {
                 path: "/face-recog",
                 element: <FaceRecog />,
