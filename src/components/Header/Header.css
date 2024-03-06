@@ -1,0 +1,14 @@
+.navbar__logo-container {
+    background-color: var(--clr-primary);
+    position: relative;
+    min-height: 5rem;
+    margin-bottom: 3.5rem;
+}
+
+.navbar__top-logo {
+    position: absolute;
+    transform: translate(-50%, 50%);
+    width: 7rem;
+    left: 50%;
+    bottom: 0;
+}

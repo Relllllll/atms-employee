@@ -4,6 +4,7 @@ import Webcam from "react-webcam";
 import * as faceapi from "face-api.js";
 import { getDatabase, ref, onValue } from "firebase/database";
 import { database, storage } from "../../firebase";
+import "./FaceRecog.css";
 
 const FaceRecog = () => {
     const videoRef = useRef();
