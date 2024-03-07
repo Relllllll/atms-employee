@@ -136,7 +136,7 @@ const Profile = () => {
     return (
         <div className="content">
             <div className="main">
-                <h1 className="navbar__top-title">Welcome, <span className="employee__highlight-name">{`${employeeData.firstName}`}</span></h1>
+                <h1 className="navbar__top-title">Welcome, <span className="employee__highlight-name">{employeeData && employeeData.firstName}</span></h1>
                 <div className="profile__main">
                     {employeeData && (
                         <div className="profile__main-body">
@@ -167,7 +167,7 @@ const Profile = () => {
                 
                     <div className="profile__history">
                         <hr/>
-                            <p className="profile__history-title">Recent Attendance History</p>
+                        <p className="profile__history-title">Recent Attendance History</p>
                         <hr/>
                         <div className="profile__sections">
                             <p>Date</p>
@@ -185,23 +185,22 @@ const Profile = () => {
                     
                 </div>
                 <hr/>
-                    {/* Additional fields can be displayed as needed */}
-                    <button className="timeout__btn"
-                        onClick={() =>
-                            handleTimeoutRecord(new Date().toISOString())
-                                }
-                                disabled={timeoutRecorded}
-                                >
-                                    
-                                        Timeout
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="timeout__icon">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
-                                        </svg>
-
-                    </button>
+                {/* Additional fields can be displayed as needed */}
+                <button className="timeout__btn"
+                    onClick={() =>
+                        handleTimeoutRecord(new Date().toISOString())
+                    }
+                    disabled={timeoutRecorded}
+                >
+                    Timeout
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="timeout__icon">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                    </svg>
+                </button>
             </div>
         </div>
     );
+    
 };
 
 export default Profile;
