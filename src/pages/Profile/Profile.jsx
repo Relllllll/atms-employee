@@ -156,7 +156,7 @@ const Profile = () => {
 
     return (
         <div className="content">
-            <div className="main">S
+            <div className="main">
                 <h1 className="navbar__top-title">Welcome, <span className="employee__highlight-name">{employeeData && employeeData.firstName}</span></h1>
                 <div className="profile__main">
                     {employeeData && (
