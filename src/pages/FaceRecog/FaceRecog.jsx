@@ -202,12 +202,14 @@ const FaceRecog = () => {
         }
     };
 
+
     return (
         <div className="faceRecog">
             <Webcam className="faceRecog-video" ref={videoRef} />
             {showNoFaceMessage && (
                 <p className="faceRecog-prompt">No user detected</p>
             )}
+            <button className="ticket-button" onClick={() => navigate('/ticket-creation')}>Create Ticket</button>
         </div>
     );
 };
