@@ -3,6 +3,7 @@ import Root from "./layout/Root/index.jsx";
 import Loading from "./pages/Loading/Loading.jsx";
 import FaceRecog from "./pages/FaceRecog/FaceRecog.jsx";
 import Profile from "./pages/Profile/Profile";
+import Ticket from "./pages/Ticket/Ticket.jsx";
 
 const router = createBrowserRouter([
     {
@@ -19,6 +20,10 @@ const router = createBrowserRouter([
             {
                 path: "/profile/:userId",
                 element: <Profile />,
+            },
+            {
+                path: "/ticket-creation",
+                element: <Ticket />,
             },
         ],
     },

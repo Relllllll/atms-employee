@@ -15,3 +15,17 @@
 .faceRecog-prompt {
     font-weight: 600;
 }
+.ticket-button{
+    padding: 0.5rem;
+    border: 2px solid darkblue; 
+    border-radius: 1rem;
+    background-color: #f7b137;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+.ticket-button:active {
+    background-color: #d69e00; /* Return to original yellow color on click */
+}
+.ticket-button:hover {
+    background-color: #ffcd38; /* Lighter shade of your background color on hover */
+    border-color: #01162d; /* Darker shade of blue for border on hover */
+}
