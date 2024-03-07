@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { getDatabase, ref, onValue, set, update } from "firebase/database";
+import "./Profile.css";
 
 const Profile = () => {
     const location = useLocation();
@@ -133,31 +134,72 @@ const Profile = () => {
     }, [attendanceStatus, userId, employeeData]);
 
     return (
-        <div>
-            <h1>Profile</h1>
-            {employeeData && (
-                <div>
-                    <p>
-                        Name:{" "}
-                        {`${employeeData.firstName} ${
-                            employeeData.middleName || ""
-                        } ${employeeData.lastName}`}
-                    </p>
-                    <p>Age: {employeeData.age}</p>
-                    <p>Contact Number: {employeeData.contactNum}</p>
-                    <p>Address: {employeeData.address}</p>
+        <div className="content">
+            <div className="main">
+                <h1 className="navbar__top-title">Welcome, <span className="employee__highlight-name">{`${employeeData.firstName}`}</span></h1>
+                <div className="profile__main">
+                    {employeeData && (
+                        <div className="profile__main-body">
+                            <div className="employee__profile">
+                                <img src={employeeData.image} alt="Employee" className="employee__profile-img"/>
+                            </div>
+                            <div className="profile__content">
+                                <p className="profile__name-txt">
+                                    {`${employeeData.firstName} ${
+                                        employeeData.middleName || ""
+                                    } ${employeeData.lastName}`}
+                                </p>
+                                <p className="profile__status-txt">Status Today</p>
+                                <p className="profile__status-bar"><span className="dot">&#8226;</span> Present</p>
+                            </div>
+                        </div>
+                    )}
+                    <div className="profile__stats">
+                        <div className="profile__attendance">
+                            <p className="profile__total">100</p>
+                            <p className="profile__stats-title">Total Attendance</p>
+                        </div>
+                        <div className="profile__hours">
+                            <p className="profile__total">86 hrs</p>
+                            <p className="profile__stats-title">Total Hours</p>
+                        </div>
+                    </div>
+                
+                    <div className="profile__history">
+                        <hr/>
+                            <p className="profile__history-title">Recent Attendance History</p>
+                        <hr/>
+                        <div className="profile__sections">
+                            <p>Date</p>
+                            <p>Time In</p>
+                            <p>Time Out</p>
+                            <p>Status</p>
+                        </div>
+                        <div className="profile__result-history">
+                            <p>02-02-23</p>
+                            <p>02-02-23</p>
+                            <p>02-02-23</p>
+                            <p>02-02-23</p>
+                        </div>
+                    </div>
+                    
+                </div>
+                <hr/>
                     {/* Additional fields can be displayed as needed */}
-                    <img src={employeeData.image} alt="Employee" />
-                    <button
+                    <button className="timeout__btn"
                         onClick={() =>
                             handleTimeoutRecord(new Date().toISOString())
-                        }
-                        disabled={timeoutRecorded}
-                    >
-                        Record Timeout
+                                }
+                                disabled={timeoutRecorded}
+                                >
+                                    
+                                        Timeout
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="timeout__icon">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                                        </svg>
+
                     </button>
-                </div>
-            )}
+            </div>
         </div>
     );
 };

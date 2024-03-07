@@ -1,50 +1,17 @@
 .faceRecog {
+    min-height: 60vh;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0.5rem;
 }
 
-.webcam-container {
-    position: fixed;
+.faceRecog-video {
+    border-radius: 1rem;
 }
 
-.webcam {
-    width: 19.813rem;
-    height: 18.813rem;
-}
-
-.no-face-message {
-    position: fixed;    
-    bottom: 20%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(255, 255, 255, 0.8);
-    padding: 5px;
-    
-}
-.top-logo-container {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-}
-
-.top-logo-container-yellow {
-    background-color: var(--clr-primary);
-    position: relative;
-    height: 5rem;
-    margin-bottom: 41.21rem;
-}
-
-.top-logo {
-    width: 7rem;
-    position: absolute;
-    bottom: 0; /* Move the image up by 50% from the bottom of the parent */
-    left: 50%; /* Center the image horizontally */
-    transform: translate(-50%, 50%); /* Adjust for the image dimensions */
+.faceRecog-prompt {
+    font-weight: 600;
 }
