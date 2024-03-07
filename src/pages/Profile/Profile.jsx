@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { getDatabase, ref, onValue } from "firebase/database";
+import { getDatabase, ref, onValue, set, update } from "firebase/database";
 import "./Profile.css";
 
 const Profile = () => {
@@ -156,7 +156,7 @@ const Profile = () => {
 
     return (
         <div className="content">
-            <div className="main">
+            <div className="main">S
                 <h1 className="navbar__top-title">Welcome, <span className="employee__highlight-name">{employeeData && employeeData.firstName}</span></h1>
                 <div className="profile__main">
                     {employeeData && (
@@ -182,6 +182,7 @@ const Profile = () => {
                         </div>
                         <div className="profile__hours">
                         <p className="profile__total">{calculateTotalHours(attendanceHistory)} hrs</p>
+
                             <p className="profile__stats-title">Total Hours</p>
                         </div>
                     </div>
@@ -189,6 +190,7 @@ const Profile = () => {
                     <div className="profile__history">
                         <hr/>
                         <p className="profile__history-title">Recent Attendance History</p>
+
                         <hr/>
                         <div className="profile__sections">
                             <p>Date</p>
@@ -217,6 +219,7 @@ const Profile = () => {
                             <p key={index}>{entry.status}</p>
                             ))}
                         </div>
+
                         </div>
                     </div>
                     
@@ -234,6 +237,7 @@ const Profile = () => {
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
                     </svg>
                 </button>
+
             </div>
         </div>
     );
