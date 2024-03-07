@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { getDatabase, ref, onValue, set, update } from "firebase/database";
+import { getDatabase, ref, onValue } from "firebase/database";
 import "./Profile.css";
 
 const Profile = () => {
@@ -9,6 +9,7 @@ const Profile = () => {
     const [userId, setUserId] = useState(null);
     const [attendanceStatus, setAttendanceStatus] = useState(null);
     const [timeoutRecorded, setTimeoutRecorded] = useState();
+    const [attendanceHistory, setAttendanceHistory] = useState([]);
 
     useEffect(() => {
         const recognizedUserId = location.pathname.split("/profile/")[1];
@@ -26,6 +27,12 @@ const Profile = () => {
         }
     }, [employeeData]);
 
+    useEffect(() => {
+        if (userId) {
+            fetchAttendanceHistory(userId);
+        }
+    }, [userId]);
+
     const fetchEmployeeData = (userId) => {
         try {
             const database = getDatabase();
@@ -40,35 +47,57 @@ const Profile = () => {
         }
     };
 
-    const updateAttendanceInDatabase = (userId, date, status, timeIn) => {
-        const database = getDatabase();
-        const attendanceRef = ref(
-            database,
-            `employees/${userId}/attendance/${date}`
-        );
+    const fetchAttendanceHistory = (userId) => {
+        try {
+            const database = getDatabase();
+            const attendanceRef = ref(database, `employees/${userId}/attendance`);
+    
+            onValue(attendanceRef, (snapshot) => {
+                const attendanceData = snapshot.val();
+                console.log("Attendance history:", attendanceData); // Log the fetched attendance history
+                if (attendanceData) {
+                    const history = Object.entries(attendanceData).map(([date, data]) => {
+                        const { status, timeIn, timeOut } = data;
+                        const dateOnly = new Date(date).toLocaleDateString();
+                        const timeInOnly = new Date(timeIn).toLocaleTimeString();
+                        const timeOutOnly = timeOut ? new Date(timeOut).toLocaleTimeString() : null;
+                        
+                        return {
+                            date: dateOnly,
+                            timeIn: timeInOnly,
+                            timeOut: timeOutOnly,
+                            status
+                        };
+                    });
+                    setAttendanceHistory(history);
+                } else {
+                    setAttendanceHistory([]);
+                }
+            });
+        } catch (error) {
+            console.error("Error fetching attendance history: ", error);
+        }
+    };
 
-        // Fetch the existing attendance data to check if timeIn is already set
-        onValue(attendanceRef, (snapshot) => {
-            const existingAttendanceData = snapshot.val();
+    const checkAttendanceStatus = (employeeData) => {
+        console.log("Checking attendance status...");
 
-            // If timeIn is not already set, update it
-            if (!existingAttendanceData || !existingAttendanceData.timeIn) {
-                update(attendanceRef, { status, timeIn })
-                    .then(() =>
-                        console.log(
-                            "Attendance status and timeIn updated in the database"
-                        )
-                    )
-                    .catch((error) =>
-                        console.error(
-                            "Error updating attendance in the database: ",
-                            error
-                        )
-                    );
+        if (employeeData) {
+            const currentDate = new Date().toISOString().split("T")[0];
+            const currentHour = new Date().getHours();
+            let newAttendanceStatus;
+
+            // Check if the current hour is within work hours (8 AM to 5 PM)
+            if (currentHour >= 8 && currentHour <= 17) {
+                newAttendanceStatus = "Present";
+                console.log("Present");
             } else {
-                console.log("TimeIn is already set, skipping update.");
+                newAttendanceStatus = "Absent";
+                console.log("Absent");
             }
-        });
+
+            setAttendanceStatus(newAttendanceStatus);
+        }
     };
 
     const handleTimeoutRecord = (timeOut) => {
@@ -95,43 +124,35 @@ const Profile = () => {
                 );
         }
     };
+    const calculateTotalHours = (history) => {
+        let totalHours = 0;
+      
+        history.forEach(entry => {
+          const timeIn = entry.timeIn;
+          const timeOut = entry.timeOut ? new Date(entry.timeOut) : null;
+      
+          const timeInDate = new Date(timeIn);
+      
+          // Check if timeInDate is valid
+          if (isNaN(timeInDate.getTime())) {
+            console.warn("Invalid timeIn:", entry);
+            return; // Skip processing this entry
+          }
+      
+          if (timeOut) {
+            const diffInMs = Math.abs(timeOut - timeInDate);
+            totalHours += diffInMs / (1000 * 60 * 60);
+          } else {
+            totalHours += 8;
+            console.warn("Entry without timeOut:", entry);
+          }
+        });
+      
+        // Use round() to ensure integer result before formatting
+        console.log("Total hours:", Math.round(totalHours));
+        return Math.round(totalHours);
+      };
 
-    const checkAttendanceStatus = (employeeData) => {
-        console.log("Checking attendance status...");
-
-        if (employeeData) {
-            const currentDate = new Date().toISOString().split("T")[0];
-            const currentHour = new Date().getHours();
-            let newAttendanceStatus;
-
-            // Check if the current hour is within work hours (8 AM to 5 PM)
-            if (currentHour >= 8 && currentHour <= 17) {
-                newAttendanceStatus = "Present";
-                console.log("Present");
-            } else {
-                newAttendanceStatus = "Absent";
-                console.log("Absent");
-            }
-
-            setAttendanceStatus(newAttendanceStatus);
-        }
-    };
-
-    useEffect(() => {
-        if (attendanceStatus && userId && employeeData) {
-            const currentDate = new Date().toISOString().split("T")[0];
-            const timeIn = new Date().toISOString();
-            const timeOut = null;
-
-            updateAttendanceInDatabase(
-                userId,
-                currentDate,
-                attendanceStatus,
-                timeIn,
-                timeOut
-            );
-        }
-    }, [attendanceStatus, userId, employeeData]);
 
     return (
         <div className="content">
@@ -156,11 +177,11 @@ const Profile = () => {
                     )}
                     <div className="profile__stats">
                         <div className="profile__attendance">
-                            <p className="profile__total">100</p>
+                            <p className="profile__total">{attendanceHistory.length}</p>
                             <p className="profile__stats-title">Total Attendance</p>
                         </div>
                         <div className="profile__hours">
-                            <p className="profile__total">86 hrs</p>
+                        <p className="profile__total">{calculateTotalHours(attendanceHistory)} hrs</p>
                             <p className="profile__stats-title">Total Hours</p>
                         </div>
                     </div>
@@ -176,10 +197,26 @@ const Profile = () => {
                             <p>Status</p>
                         </div>
                         <div className="profile__result-history">
-                            <p>02-02-23</p>
-                            <p>02-02-23</p>
-                            <p>02-02-23</p>
-                            <p>02-02-23</p>
+                        <div className="profile__history-column">
+                            {attendanceHistory.slice().reverse().map((entry, index) => (
+                            <p key={index}>{entry.date}</p>
+                            ))}
+                        </div>
+                        <div className="profile__history-column">
+                            {attendanceHistory.slice().reverse().map((entry, index) => (
+                            <p key={index}>{entry.timeIn}</p>
+                            ))}
+                        </div>
+                        <div className="profile__history-column">
+                            {attendanceHistory.slice().reverse().map((entry, index) => (
+                            <p key={index}>{entry.timeOut || "-"}</p>
+                            ))}
+                        </div>
+                        <div className="profile__history-column">
+                            {attendanceHistory.slice().reverse().map((entry, index) => (
+                            <p key={index}>{entry.status}</p>
+                            ))}
+                        </div>
                         </div>
                     </div>
                     
@@ -200,7 +237,6 @@ const Profile = () => {
             </div>
         </div>
     );
-    
 };
 
 export default Profile;
