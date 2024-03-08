@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { sendTicketMessage } from "../../firebase";
 import "./Ticket.css"; // Import your CSS file for styling
 
 const Ticket = () => {
@@ -15,8 +16,9 @@ const Ticket = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Here you can call the function to send an email
-        sendEmail(name, message);
+        // Here you can call the function to send a ticket message
+        console.log("Sending Message:", name, message);
+        sendTicketMessage(name, message);
         // Optionally, you can clear the form fields after submitting
         setName("");
         setMessage("");
@@ -47,7 +49,7 @@ const Ticket = () => {
                         className="input-field message-field"
                     ></textarea>
                 </div>
-                <button className="send-email-btn" type="submit">Send Email</button>
+                <button className="send-email-btn" type="submit">Send Message</button>
             </form>
         </div>
     );

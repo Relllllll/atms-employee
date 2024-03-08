@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getDatabase, ref } from "firebase/database";
+import { getDatabase, ref, push } from "firebase/database";
 import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth"
 // TODO: Add SDKs for Firebase products that you want to use
@@ -26,7 +26,17 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 
 const auth = getAuth(app);
-const database = getDatabase(app);
 const storage = getStorage(app);
 
-export { database, storage };
+const database = getDatabase();
+
+const sendTicketMessage = (name, message) => {
+  const messagesRef = ref(database, 'ticketMessages');
+  push(messagesRef, {
+    name: name,
+    message: message,
+    timestamp: new Date().toISOString() // or use firebase.database.ServerValue.TIMESTAMP
+  });
+};
+
+export { database, storage, sendTicketMessage };
