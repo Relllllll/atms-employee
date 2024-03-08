@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { getDatabase, ref, onValue, set, update } from "firebase/database";
+import { getDatabase, ref, onValue, update } from "firebase/database";
 import "./Profile.css";
 
 const Profile = () => {
@@ -46,6 +46,34 @@ const Profile = () => {
             console.error("Error fetching employee data: ", error);
         }
     };
+
+    const updateAttendanceInDatabase = (userId, date, status, timeIn, timeOut) => {
+        try {
+            const database = getDatabase();
+            const attendanceRef = ref(
+                database,
+                `employees/${userId}/attendance/${date}`
+            );
+    
+            // Check if timeIn is not already set, then update it
+            onValue(attendanceRef, (snapshot) => {
+                const existingAttendanceData = snapshot.val();
+                if (!existingAttendanceData || !existingAttendanceData.timeIn) {
+                    update(attendanceRef, { status, timeIn, timeOut })
+                        .then(() =>
+                            console.log("Attendance status and timeIn updated in the database")
+                        )
+                        .catch((error) =>
+                            console.error("Error updating attendance in the database: ", error)
+                        );
+                }
+            });
+        } catch (error) {
+            console.error("Error updating attendance in the database: ", error);
+        }
+    };
+
+
 
     const fetchAttendanceHistory = (userId) => {
         try {
@@ -100,6 +128,22 @@ const Profile = () => {
         }
     };
 
+    useEffect(() => {
+        if (attendanceStatus && userId && employeeData) {
+            const currentDate = new Date().toISOString().split("T")[0];
+            const timeIn = new Date().toISOString();
+            const timeOut = null;
+
+            updateAttendanceInDatabase(
+                userId,
+                currentDate,
+                attendanceStatus,
+                timeIn,
+                timeOut
+            );
+        }
+    }, [attendanceStatus, userId, employeeData]);
+
     const handleTimeoutRecord = (timeOut) => {
         // Update the timeoutRecorded status in the state
         setTimeoutRecorded(true);
@@ -124,6 +168,7 @@ const Profile = () => {
                 );
         }
     };
+
     const calculateTotalHours = (history) => {
         let totalHours = 0;
       
@@ -151,8 +196,7 @@ const Profile = () => {
         // Use round() to ensure integer result before formatting
         console.log("Total hours:", Math.round(totalHours));
         return Math.round(totalHours);
-      };
-
+    };
 
     return (
         <div className="content">
@@ -181,8 +225,7 @@ const Profile = () => {
                             <p className="profile__stats-title">Total Attendance</p>
                         </div>
                         <div className="profile__hours">
-                        <p className="profile__total">{calculateTotalHours(attendanceHistory)} hrs</p>
-
+                            <p className="profile__total">{calculateTotalHours(attendanceHistory)} hrs</p>
                             <p className="profile__stats-title">Total Hours</p>
                         </div>
                     </div>
@@ -199,27 +242,26 @@ const Profile = () => {
                             <p>Status</p>
                         </div>
                         <div className="profile__result-history">
-                        <div className="profile__history-column">
-                            {attendanceHistory.slice().reverse().map((entry, index) => (
-                            <p key={index}>{entry.date}</p>
-                            ))}
-                        </div>
-                        <div className="profile__history-column">
-                            {attendanceHistory.slice().reverse().map((entry, index) => (
-                            <p key={index}>{entry.timeIn}</p>
-                            ))}
-                        </div>
-                        <div className="profile__history-column">
-                            {attendanceHistory.slice().reverse().map((entry, index) => (
-                            <p key={index}>{entry.timeOut || "-"}</p>
-                            ))}
-                        </div>
-                        <div className="profile__history-column">
-                            {attendanceHistory.slice().reverse().map((entry, index) => (
-                            <p key={index}>{entry.status}</p>
-                            ))}
-                        </div>
-
+                            <div className="profile__history-column">
+                                {attendanceHistory.slice().reverse().map((entry, index) => (
+                                    <p key={index}>{entry.date}</p>
+                                ))}
+                            </div>
+                            <div className="profile__history-column">
+                                {attendanceHistory.slice().reverse().map((entry, index) => (
+                                    <p key={index}>{entry.timeIn}</p>
+                                ))}
+                            </div>
+                            <div className="profile__history-column">
+                                {attendanceHistory.slice().reverse().map((entry, index) => (
+                                    <p key={index}>{entry.timeOut || "-"}</p>
+                                ))}
+                            </div>
+                            <div className="profile__history-column">
+                                {attendanceHistory.slice().reverse().map((entry, index) => (
+                                    <p key={index}>{entry.status}</p>
+                                ))}
+                            </div>
                         </div>
                     </div>
                     
@@ -233,8 +275,8 @@ const Profile = () => {
                     disabled={timeoutRecorded}
                 >
                     Timeout
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" className="timeout__icon">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="timeout__icon">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
                     </svg>
                 </button>
 

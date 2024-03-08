@@ -16,11 +16,13 @@
     font-weight: 600;
 }
 .ticket-button{
+    color: var(--clr-dark-blue);
+    background-color: var(--clr-primary);
+    font-size: var(--size-lg);
+    width: 15rem;
     padding: 0.5rem;
-    border: 2px solid darkblue; 
-    border-radius: 1rem;
-    background-color: #f7b137;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
+    border-radius: 2rem;
+    font-weight: 700;
 }
 .ticket-button:active {
     background-color: #d69e00; /* Return to original yellow color on click */
