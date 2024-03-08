@@ -24,11 +24,12 @@
 }
 
 .input-field {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 16px;
+    background-color: var(--clr-light-gray);
+    border: 1px solid var(--clr-gray);
+    padding: 0.8rem;
+    border-radius: 0.5rem;
+    width: 35rem;
+    
 }
 
 .message-field {
@@ -36,18 +37,20 @@
 }
 
 .ticket-container .send-email-btn {
+    color: var(--clr-dark-blue);
+    background-color: var(--clr-primary);
+    font-size: var(--size-lg);
+    width: 15rem;
     padding: 0.5rem;
-    border: 2px solid #042547; 
-    border-radius: 1rem;
-    background-color: #f7b137;
-    align-items: center; 
-    text-align: center;
+    border-radius: 2rem;
+    font-weight: 700;
     transition: background-color 0.3s ease, border-color 0.3s ease;
+    
 }
 
 .send-email-btn:hover {
     background-color: #ffcd38; /* Lighter shade of your background color on hover */
-    border-color: #002751; /* Darker shade of blue for border on hover */
+
 }
 
 .send-email-btn:active {
