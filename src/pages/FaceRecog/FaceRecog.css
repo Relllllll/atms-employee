@@ -1,4 +1,5 @@
 .faceRecog {
+    flex: 1;
     min-height: 60vh;
     display: flex;
     flex-direction: column;
