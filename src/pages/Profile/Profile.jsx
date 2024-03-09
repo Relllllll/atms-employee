@@ -87,9 +87,12 @@ const Profile = () => {
                     const history = Object.entries(attendanceData).map(([date, data]) => {
                         const { status, timeIn, timeOut } = data;
                         const dateOnly = new Date(date).toLocaleDateString();
-                        const timeInOnly = new Date(timeIn).toLocaleTimeString();
-                        const timeOutOnly = timeOut ? new Date(timeOut).toLocaleTimeString() : null;
-                        
+                        const timeInDate = new Date(timeIn);
+                        const timeOutDate = timeOut ? new Date(timeOut) : null;
+    
+                        const timeInOnly = timeInDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                        const timeOutOnly = timeOutDate ? timeOutDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : null;
+    
                         return {
                             date: dateOnly,
                             timeIn: timeInOnly,
@@ -171,31 +174,55 @@ const Profile = () => {
 
     const calculateTotalHours = (history) => {
         let totalHours = 0;
-      
-        history.forEach(entry => {
-          const timeIn = entry.timeIn;
-          const timeOut = entry.timeOut ? new Date(entry.timeOut) : null;
-      
-          const timeInDate = new Date(timeIn);
-      
-          // Check if timeInDate is valid
-          if (isNaN(timeInDate.getTime())) {
-            console.warn("Invalid timeIn:", entry);
-            return; // Skip processing this entry
-          }
-      
-          if (timeOut) {
-            const diffInMs = Math.abs(timeOut - timeInDate);
-            totalHours += diffInMs / (1000 * 60 * 60);
-          } else {
-            totalHours += 8;
-            console.warn("Entry without timeOut:", entry);
-          }
+    
+        history.forEach((entry, index) => {
+            const timeIn = entry.timeIn;
+            const timeOut = entry.timeOut ? entry.timeOut : null;
+    
+            console.log(`Processing entry ${index + 1}:`);
+            console.log("Time in:", timeIn);
+            console.log("Time out:", timeOut);
+    
+            const timeInDate = new Date(entry.date + " " + timeIn);
+            const timeOutDate = timeOut ? new Date(entry.date + " " + timeOut) : null;
+    
+            // Check if timeInDate is valid
+            if (isNaN(timeInDate.getTime())) {
+                console.warn(`Invalid timeIn at index ${index}:`, entry);
+                return; // Skip processing this entry
+            }
+    
+            if (timeOutDate) {
+                const diffInMs = Math.abs(timeOutDate - timeInDate);
+                const hoursWorked = diffInMs / (1000 * 60 * 60);
+                totalHours += hoursWorked;
+                console.log("Hours worked for this entry:", hoursWorked);
+            } else {
+                totalHours += 8; // Assuming 8 hours if timeOut is not recorded
+                console.warn("Entry without timeOut:", entry);
+            }
+    
+            console.log("Total hours so far:", totalHours);
         });
-      
+    
         // Use round() to ensure integer result before formatting
         console.log("Total hours:", Math.round(totalHours));
         return Math.round(totalHours);
+    };
+    const convertToISOTime = (timeString) => {
+        const [time, modifier] = timeString.split(' ');
+    
+        let [hours, minutes, seconds] = time.split(':');
+    
+        if (hours === '12') {
+            hours = '00';
+        }
+    
+        if (modifier === 'PM') {
+            hours = parseInt(hours, 10) + 12;
+        }
+    
+        return `${hours}:${minutes}:${seconds}`;
     };
 
     return (
