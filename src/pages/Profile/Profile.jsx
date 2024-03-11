@@ -207,7 +207,7 @@ const Profile = () => {
     
         // Use round() to ensure integer result before formatting
         console.log("Total hours:", Math.round(totalHours));
-        return Math.round(totalHours);
+        return totalHours.toFixed(2);
     };
     const convertToISOTime = (timeString) => {
         const [time, modifier] = timeString.split(' ');

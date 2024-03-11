@@ -7,7 +7,9 @@ const Ticket = () => {
     const [message, setMessage] = useState("");
 
     const handleNameChange = (e) => {
-        setName(e.target.value);
+        const sanitizedValue = e.target.value.replace(/[^0-9-]/g, '');
+    // Update the state with the sanitized value
+    setName(sanitizedValue);
     };
 
     const handleMessageChange = (e) => {
@@ -16,9 +18,10 @@ const Ticket = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        const date = new Date().toLocaleDateString();
         // Here you can call the function to send a ticket message
-        console.log("Sending Message:", name, message);
-        sendTicketMessage(name, message);
+        console.log("Sending Message:", name, message, date);
+        sendTicketMessage(name, message, date);
         // Optionally, you can clear the form fields after submitting
         setName("");
         setMessage("");
@@ -29,7 +32,7 @@ const Ticket = () => {
             <h1>Create Ticket</h1>
             <form onSubmit={handleSubmit} className="ticket-form">
                 <div className="form-group">
-                    <label htmlFor="name" className="label">Name:</label>
+                    <label htmlFor="name" className="label">Id Number:</label>
                     <input
                         type="text"
                         id="name"
@@ -37,6 +40,7 @@ const Ticket = () => {
                         onChange={handleNameChange}
                         required
                         className="input-field"
+                        pattern="[0-9-]*"
                     />
                 </div>
                 <div className="form-group">
