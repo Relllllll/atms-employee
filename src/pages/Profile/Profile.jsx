@@ -119,7 +119,7 @@ const Profile = () => {
             let newAttendanceStatus;
 
             // Check if the current hour is within work hours (8 AM to 5 PM)
-            if (currentHour >= 8 && currentHour <= 17) {
+            if (currentHour >= 5 && currentHour <= 24) {
                 newAttendanceStatus = "Present";
                 console.log("Present");
             } else {
