@@ -7,9 +7,7 @@ const Ticket = () => {
     const [message, setMessage] = useState("");
 
     const handleNameChange = (e) => {
-        const sanitizedValue = e.target.value.replace(/[^0-9-]/g, '');
-    // Update the state with the sanitized value
-    setName(sanitizedValue);
+    setName(e.target.value);
     };
 
     const handleMessageChange = (e) => {
@@ -29,7 +27,7 @@ const Ticket = () => {
 
     return (
         <div className="ticket-container">
-            <h1>Create Ticket</h1>
+            <h1>Create Report</h1>
             <form onSubmit={handleSubmit} className="ticket-form">
                 <div className="form-group">
                     <label htmlFor="name" className="label">Id Number:</label>
@@ -40,7 +38,7 @@ const Ticket = () => {
                         onChange={handleNameChange}
                         required
                         className="input-field"
-                        pattern="[0-9-]*"
+                        
                     />
                 </div>
                 <div className="form-group">
@@ -53,7 +51,7 @@ const Ticket = () => {
                         className="input-field message-field"
                     ></textarea>
                 </div>
-                <button className="send-email-btn" type="submit">Send Message</button>
+                <button className="send-email-btn" type="submit">Send Report</button>
             </form>
         </div>
     );
