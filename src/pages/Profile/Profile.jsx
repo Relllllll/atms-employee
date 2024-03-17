@@ -126,7 +126,7 @@ const Profile = () => {
                 console.log("Date list:", dates);
     
                 // Sort the dates in ascending order
-                dates.sort();
+                dates.sort((a, b) => b.getTime() - a.getTime());
     
                 // Find the last attendance date
                 const lastAttendanceDate = dates[dates.length - 1];
@@ -179,7 +179,7 @@ const Profile = () => {
                         const timeInDate = timeIn ? new Date(timeIn): null ;
                         const timeOutDate = timeOut ? new Date(timeOut) : null;
     
-                        const timeInOnly = timeInDate ? timeInDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }): null;
+                        const timeInOnly = timeInDate ? timeInDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }):null;
                         const timeOutOnly = timeOutDate ? timeOutDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : null;
     
                         return {
