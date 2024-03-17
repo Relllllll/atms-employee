@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { getDatabase, ref, onValue, update } from "firebase/database";
+import { getDatabase, ref, onValue, update, get,push } from "firebase/database";
 import "./Profile.css";
 
 const Profile = () => {
@@ -10,6 +10,9 @@ const Profile = () => {
     const [attendanceStatus, setAttendanceStatus] = useState(null);
     const [timeoutRecorded, setTimeoutRecorded] = useState();
     const [attendanceHistory, setAttendanceHistory] = useState([]);
+    const [attendanceLogs, setAttendanceLogs] = useState([]);
+    
+    
 
     useEffect(() => {
         const recognizedUserId = location.pathname.split("/profile/")[1];
@@ -32,15 +35,33 @@ const Profile = () => {
             fetchAttendanceHistory(userId);
         }
     }, [userId]);
+    
 
     const fetchEmployeeData = (userId) => {
         try {
             const database = getDatabase();
             const employeesRef = ref(database, `employees/${userId}`);
+            const attendanceLogsRef = ref(
+                database,
+                `employees/${userId}/attendance`
+            );
 
+            // Fetch employee data
             onValue(employeesRef, (snapshot) => {
                 const employeeData = snapshot.val();
                 setEmployeeData(employeeData);
+            });
+
+            // Fetch attendance logs
+            onValue(attendanceLogsRef, (snapshot) => {
+                const logsData = snapshot.val();
+                if (logsData) {
+                    const logsArray = Object.entries(logsData).map(
+                        ([date, log]) => ({ date, ...log })
+                    );
+                    setAttendanceLogs(logsArray);
+                    setStatusToday(getStatusForToday(logsArray));
+                }
             });
         } catch (error) {
             console.error("Error fetching employee data: ", error);
@@ -54,10 +75,15 @@ const Profile = () => {
                 database,
                 `employees/${userId}/attendance/${date}`
             );
-    
+            
             // Check if timeIn is not already set, then update it
             onValue(attendanceRef, (snapshot) => {
                 const existingAttendanceData = snapshot.val();
+                
+                if (!existingAttendanceData) {
+                    // Call function to mark absent for missing attendance record
+                    handleAutomaticAbsenceMarking(userId, date);
+                }
                 if (!existingAttendanceData || !existingAttendanceData.timeIn) {
                     update(attendanceRef, { status, timeIn, timeOut })
                         .then(() =>
@@ -67,12 +93,75 @@ const Profile = () => {
                             console.error("Error updating attendance in the database: ", error)
                         );
                 }
+                
             });
         } catch (error) {
             console.error("Error updating attendance in the database: ", error);
         }
     };
-
+    const getSkippedDates = (startDate, endDate) => {
+        const skippedDates = [];
+        const currentDate = new Date(startDate);
+        currentDate.setDate(currentDate.getDate() + 1);
+        while (currentDate < endDate) {
+            skippedDates.push(new Date(currentDate));
+            currentDate.setDate(currentDate.getDate() + 1); // Increment date by 1 day
+        }
+        return skippedDates;
+    };
+    
+    
+    const handleAutomaticAbsenceMarking = (userId, date) => {
+        console.log("Handling automatic absence marking for date:", date);
+        const database = getDatabase();
+        const attendanceRef = ref(database, `employees/${userId}/attendance`);
+    
+        get(attendanceRef)
+            .then((snapshot) => {
+                const attendanceData = snapshot.val();
+                console.log("Fetched attendance data:", attendanceData);
+    
+                // Get the list of dates from attendance data
+                const dates = Object.keys(attendanceData || {}).map(dateString => new Date(dateString));
+                console.log("Date list:", dates);
+    
+                // Sort the dates in ascending order
+                dates.sort();
+    
+                // Find the last attendance date
+                const lastAttendanceDate = dates[dates.length - 1];
+                console.log("Last attendance date:", lastAttendanceDate);
+    
+                // Convert dates to Date objects for comparison
+                const lastAttendance = new Date(lastAttendanceDate);
+                const latestAttendance = new Date(date);
+                console.log("Latest attendance date:", latestAttendance);
+    
+                // Check if there is a gap between the last attendance and the latest attendance
+                const skippedDates = getSkippedDates(lastAttendance, latestAttendance);
+                console.log("Skipped dates:", skippedDates);
+    
+                // Mark absent for skipped dates if they don't already exist
+                skippedDates.forEach((skippedDate) => {
+                    // Ensure consistent date handling (convert to ISO format)
+                    const formattedDate = skippedDate.toISOString().split('T')[0];
+                    console.log("Checking date:", formattedDate);
+                    if (!(formattedDate in attendanceData)) {
+                        console.log("Marking absent for date:", formattedDate);
+                        update(attendanceRef, { [formattedDate]: { status: "Absent" } })
+                            .then(() => console.log("Marked absent for date:", formattedDate))
+                            .catch((error) =>
+                                console.error("Error updating attendance in the database: ", error)
+                            );
+                    } else {
+                        console.log("Attendance already exists for date:", formattedDate);
+                    }
+                });
+            })
+            .catch((error) => console.error("Error fetching attendance data: ", error));
+    };
+    
+    
 
 
     const fetchAttendanceHistory = (userId) => {
@@ -87,10 +176,10 @@ const Profile = () => {
                     const history = Object.entries(attendanceData).map(([date, data]) => {
                         const { status, timeIn, timeOut } = data;
                         const dateOnly = new Date(date).toLocaleDateString();
-                        const timeInDate = new Date(timeIn);
+                        const timeInDate = timeIn ? new Date(timeIn): null ;
                         const timeOutDate = timeOut ? new Date(timeOut) : null;
     
-                        const timeInOnly = timeInDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                        const timeInOnly = timeInDate ? timeInDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }): null;
                         const timeOutOnly = timeOutDate ? timeOutDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : null;
     
                         return {
@@ -100,8 +189,12 @@ const Profile = () => {
                             status
                         };
                     });
+                    
                     setAttendanceHistory(history);
+                    handleAutomaticAbsenceMarking(userId, new Date().toISOString().split('T')[0]);
                 } else {
+                     // Call handleAutomaticAbsenceMarking after fetching attendance data
+                
                     setAttendanceHistory([]);
                 }
             });
@@ -119,7 +212,7 @@ const Profile = () => {
             let newAttendanceStatus;
 
             // Check if the current hour is within work hours (8 AM to 5 PM)
-            if (currentHour >= 5 && currentHour <= 24) {
+            if (currentHour >= 5 && currentHour <= 23) {
                 newAttendanceStatus = "Present";
                 console.log("Present");
             } else {
@@ -172,58 +265,54 @@ const Profile = () => {
         }
     };
 
-    const calculateTotalHours = (history) => {
-        let totalHours = 0;
+    const calculateTotalStats = () => {
+        let totalMilliseconds = 0;
+        let totalDays = 0;
     
-        history.forEach((entry, index) => {
-            const timeIn = entry.timeIn;
-            const timeOut = entry.timeOut ? entry.timeOut : null;
+        attendanceLogs.forEach((log) => {
+            if (log.timeIn && log.timeOut) {
+                const timeIn = new Date(log.timeIn);
+                const timeOut = new Date(log.timeOut);
+                const millisecondsWorked = timeOut - timeIn;
+                totalMilliseconds += millisecondsWorked;
     
-            console.log(`Processing entry ${index + 1}:`);
-            console.log("Time in:", timeIn);
-            console.log("Time out:", timeOut);
-    
-            const timeInDate = new Date(entry.date + " " + timeIn);
-            const timeOutDate = timeOut ? new Date(entry.date + " " + timeOut) : null;
-    
-            // Check if timeInDate is valid
-            if (isNaN(timeInDate.getTime())) {
-                console.warn(`Invalid timeIn at index ${index}:`, entry);
-                return; // Skip processing this entry
+                totalDays++;
             }
-    
-            if (timeOutDate) {
-                const diffInMs = Math.abs(timeOutDate - timeInDate);
-                const hoursWorked = diffInMs / (1000 * 60 * 60);
-                totalHours += hoursWorked;
-                console.log("Hours worked for this entry:", hoursWorked);
-            } else {
-                totalHours += 8; // Assuming 8 hours if timeOut is not recorded
-                console.warn("Entry without timeOut:", entry);
-            }
-    
-            console.log("Total hours so far:", totalHours);
         });
     
-        // Use round() to ensure integer result before formatting
-        console.log("Total hours:", Math.round(totalHours));
-        return totalHours.toFixed(2);
+        const totalSeconds = Math.floor(totalMilliseconds / 1000);
+        const totalHours = totalSeconds / 3600;
+    
+        const hours = Math.floor(totalHours);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+    
+        // Calculate remaining decimal part after subtracting whole hours
+        const remainingDecimalHours = totalHours - hours;
+        const decimalMinutes = Math.floor((remainingDecimalHours * 60) % 60);
+        const decimalSeconds = Math.floor((remainingDecimalHours * 3600) % 60);
+    
+        const formattedTotalTime = `${hours}:${minutes}:${seconds}`;
+        
+    
+        return {
+            totalHours: totalHours.toFixed(2),
+            totalDays,
+            hours,
+            minutes,
+            seconds,
+            formattedTotalTime: `${formattedTotalTime}.${decimalMinutes}${decimalSeconds}`, 
+
+        };
     };
-    const convertToISOTime = (timeString) => {
-        const [time, modifier] = timeString.split(' ');
     
-        let [hours, minutes, seconds] = time.split(':');
+    const { formattedTotalTime, totalDays } = calculateTotalStats();
+    const formattedTotalTimeWithoutDecimal = formattedTotalTime.split('.')[0];
+
     
-        if (hours === '12') {
-            hours = '00';
-        }
     
-        if (modifier === 'PM') {
-            hours = parseInt(hours, 10) + 12;
-        }
     
-        return `${hours}:${minutes}:${seconds}`;
-    };
+    
 
     return (
         <div className="content">
@@ -248,11 +337,11 @@ const Profile = () => {
                     )}
                     <div className="profile__stats">
                         <div className="profile__attendance">
-                            <p className="profile__total">{attendanceHistory.length}</p>
+                            <p className="profile__total">{totalDays} days</p>
                             <p className="profile__stats-title">Total Attendance</p>
                         </div>
                         <div className="profile__hours">
-                            <p className="profile__total">{calculateTotalHours(attendanceHistory)} hrs</p>
+                            <p className="profile__total">{formattedTotalTimeWithoutDecimal} hrs</p>
                             <p className="profile__stats-title">Total Hours</p>
                         </div>
                     </div>
@@ -276,7 +365,7 @@ const Profile = () => {
                             </div>
                             <div className="profile__history-column">
                                 {attendanceHistory.slice().reverse().map((entry, index) => (
-                                    <p key={index}>{entry.timeIn}</p>
+                                    <p key={index}>{entry.timeIn || "-"}</p>
                                 ))}
                             </div>
                             <div className="profile__history-column">
