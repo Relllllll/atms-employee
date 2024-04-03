@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 import { useLocation } from "react-router-dom";
-import { getDatabase, ref, onValue, update, get,push } from "firebase/database";
+import {
+    getDatabase,
+    ref,
+    onValue,
+    update,
+    get,
+    push,
+} from "firebase/database";
 import "./Profile.css";
 
 const Profile = () => {
@@ -11,8 +20,6 @@ const Profile = () => {
     const [timeoutRecorded, setTimeoutRecorded] = useState();
     const [attendanceHistory, setAttendanceHistory] = useState([]);
     const [attendanceLogs, setAttendanceLogs] = useState([]);
-    
-    
 
     useEffect(() => {
         const recognizedUserId = location.pathname.split("/profile/")[1];
@@ -35,7 +42,6 @@ const Profile = () => {
             fetchAttendanceHistory(userId);
         }
     }, [userId]);
-    
 
     const fetchEmployeeData = (userId) => {
         try {
@@ -68,18 +74,24 @@ const Profile = () => {
         }
     };
 
-    const updateAttendanceInDatabase = (userId, date, status, timeIn, timeOut) => {
+    const updateAttendanceInDatabase = (
+        userId,
+        date,
+        status,
+        timeIn,
+        timeOut
+    ) => {
         try {
             const database = getDatabase();
             const attendanceRef = ref(
                 database,
                 `employees/${userId}/attendance/${date}`
             );
-            
+
             // Check if timeIn is not already set, then update it
             onValue(attendanceRef, (snapshot) => {
                 const existingAttendanceData = snapshot.val();
-                
+
                 if (!existingAttendanceData) {
                     // Call function to mark absent for missing attendance record
                     handleAutomaticAbsenceMarking(userId, date);
@@ -87,13 +99,17 @@ const Profile = () => {
                 if (!existingAttendanceData || !existingAttendanceData.timeIn) {
                     update(attendanceRef, { status, timeIn, timeOut })
                         .then(() =>
-                            console.log("Attendance status and timeIn updated in the database")
+                            console.log(
+                                "Attendance status and timeIn updated in the database"
+                            )
                         )
                         .catch((error) =>
-                            console.error("Error updating attendance in the database: ", error)
+                            console.error(
+                                "Error updating attendance in the database: ",
+                                error
+                            )
                         );
                 }
-                
             });
         } catch (error) {
             console.error("Error updating attendance in the database: ", error);
@@ -109,92 +125,134 @@ const Profile = () => {
         }
         return skippedDates;
     };
-    
-    
+
     const handleAutomaticAbsenceMarking = (userId, date) => {
         console.log("Handling automatic absence marking for date:", date);
         const database = getDatabase();
         const attendanceRef = ref(database, `employees/${userId}/attendance`);
-    
+
         get(attendanceRef)
             .then((snapshot) => {
                 const attendanceData = snapshot.val();
                 console.log("Fetched attendance data:", attendanceData);
-    
+
                 // Get the list of dates from attendance data
-                const dates = Object.keys(attendanceData || {}).map(dateString => new Date(dateString));
+                const dates = Object.keys(attendanceData || {}).map(
+                    (dateString) => new Date(dateString)
+                );
                 console.log("Date list:", dates);
-    
+
                 // Sort the dates in ascending order
                 dates.sort((a, b) => b.getTime() - a.getTime());
-    
+
                 // Find the last attendance date
                 const lastAttendanceDate = dates[dates.length - 1];
                 console.log("Last attendance date:", lastAttendanceDate);
-    
+
                 // Convert dates to Date objects for comparison
                 const lastAttendance = new Date(lastAttendanceDate);
                 const latestAttendance = new Date(date);
                 console.log("Latest attendance date:", latestAttendance);
-    
+
                 // Check if there is a gap between the last attendance and the latest attendance
-                const skippedDates = getSkippedDates(lastAttendance, latestAttendance);
+                const skippedDates = getSkippedDates(
+                    lastAttendance,
+                    latestAttendance
+                );
                 console.log("Skipped dates:", skippedDates);
-    
+
                 // Mark absent for skipped dates if they don't already exist
                 skippedDates.forEach((skippedDate) => {
                     // Ensure consistent date handling (convert to ISO format)
-                    const formattedDate = skippedDate.toISOString().split('T')[0];
+                    const formattedDate = skippedDate
+                        .toISOString()
+                        .split("T")[0];
                     console.log("Checking date:", formattedDate);
                     if (!(formattedDate in attendanceData)) {
                         console.log("Marking absent for date:", formattedDate);
-                        update(attendanceRef, { [formattedDate]: { status: "Absent" } })
-                            .then(() => console.log("Marked absent for date:", formattedDate))
+                        update(attendanceRef, {
+                            [formattedDate]: { status: "Absent" },
+                        })
+                            .then(() =>
+                                console.log(
+                                    "Marked absent for date:",
+                                    formattedDate
+                                )
+                            )
                             .catch((error) =>
-                                console.error("Error updating attendance in the database: ", error)
+                                console.error(
+                                    "Error updating attendance in the database: ",
+                                    error
+                                )
                             );
                     } else {
-                        console.log("Attendance already exists for date:", formattedDate);
+                        console.log(
+                            "Attendance already exists for date:",
+                            formattedDate
+                        );
                     }
                 });
             })
-            .catch((error) => console.error("Error fetching attendance data: ", error));
+            .catch((error) =>
+                console.error("Error fetching attendance data: ", error)
+            );
     };
-    
-    
-
 
     const fetchAttendanceHistory = (userId) => {
         try {
             const database = getDatabase();
-            const attendanceRef = ref(database, `employees/${userId}/attendance`);
-    
+            const attendanceRef = ref(
+                database,
+                `employees/${userId}/attendance`
+            );
+
             onValue(attendanceRef, (snapshot) => {
                 const attendanceData = snapshot.val();
                 console.log("Attendance history:", attendanceData); // Log the fetched attendance history
                 if (attendanceData) {
-                    const history = Object.entries(attendanceData).map(([date, data]) => {
-                        const { status, timeIn, timeOut } = data;
-                        const dateOnly = new Date(date).toLocaleDateString();
-                        const timeInDate = timeIn ? new Date(timeIn): null ;
-                        const timeOutDate = timeOut ? new Date(timeOut) : null;
-    
-                        const timeInOnly = timeInDate ? timeInDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }):null;
-                        const timeOutOnly = timeOutDate ? timeOutDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : null;
-    
-                        return {
-                            date: dateOnly,
-                            timeIn: timeInOnly,
-                            timeOut: timeOutOnly,
-                            status
-                        };
-                    });
-                    
+                    const history = Object.entries(attendanceData).map(
+                        ([date, data]) => {
+                            const { status, timeIn, timeOut } = data;
+                            const dateOnly = new Date(
+                                date
+                            ).toLocaleDateString();
+                            const timeInDate = timeIn ? new Date(timeIn) : null;
+                            const timeOutDate = timeOut
+                                ? new Date(timeOut)
+                                : null;
+
+                            const timeInOnly = timeInDate
+                                ? timeInDate.toLocaleTimeString("en-US", {
+                                      hour: "numeric",
+                                      minute: "2-digit",
+                                      hour12: true,
+                                  })
+                                : null;
+                            const timeOutOnly = timeOutDate
+                                ? timeOutDate.toLocaleTimeString("en-US", {
+                                      hour: "numeric",
+                                      minute: "2-digit",
+                                      hour12: true,
+                                  })
+                                : null;
+
+                            return {
+                                date: dateOnly,
+                                timeIn: timeInOnly,
+                                timeOut: timeOutOnly,
+                                status,
+                            };
+                        }
+                    );
+
                     setAttendanceHistory(history);
-                    handleAutomaticAbsenceMarking(userId, new Date().toISOString().split('T')[0]);
+                    handleAutomaticAbsenceMarking(
+                        userId,
+                        new Date().toISOString().split("T")[0]
+                    );
                 } else {
-                     // Call handleAutomaticAbsenceMarking after fetching attendance data
-                
+                    // Call handleAutomaticAbsenceMarking after fetching attendance data
+
                     setAttendanceHistory([]);
                 }
             });
@@ -268,61 +326,114 @@ const Profile = () => {
     const calculateTotalStats = () => {
         let totalMilliseconds = 0;
         let totalDays = 0;
-    
+
         attendanceLogs.forEach((log) => {
             if (log.timeIn && log.timeOut) {
                 const timeIn = new Date(log.timeIn);
                 const timeOut = new Date(log.timeOut);
                 const millisecondsWorked = timeOut - timeIn;
                 totalMilliseconds += millisecondsWorked;
-    
+
                 totalDays++;
             }
         });
-    
+
         const totalSeconds = Math.floor(totalMilliseconds / 1000);
         const totalHours = totalSeconds / 3600;
-    
+
         const hours = Math.floor(totalHours);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = totalSeconds % 60;
-    
+
         // Calculate remaining decimal part after subtracting whole hours
         const remainingDecimalHours = totalHours - hours;
         const decimalMinutes = Math.floor((remainingDecimalHours * 60) % 60);
         const decimalSeconds = Math.floor((remainingDecimalHours * 3600) % 60);
-    
+
         const formattedTotalTime = `${hours}:${minutes}:${seconds}`;
-        
-    
+
         return {
             totalHours: totalHours.toFixed(2),
             totalDays,
             hours,
             minutes,
             seconds,
-            formattedTotalTime: `${formattedTotalTime}.${decimalMinutes}${decimalSeconds}`, 
-
+            formattedTotalTime: `${formattedTotalTime}.${decimalMinutes}${decimalSeconds}`,
         };
     };
-    
-    const { formattedTotalTime, totalDays } = calculateTotalStats();
-    const formattedTotalTimeWithoutDecimal = formattedTotalTime.split('.')[0];
 
-    
-    
-    
-    
+    const { formattedTotalTime, totalDays } = calculateTotalStats();
+    const formattedTotalTimeWithoutDecimal = formattedTotalTime.split(".")[0];
+
+    const handleDownloadPersonalLog = () => {
+        // Create a new jsPDF instance
+        const doc = new jsPDF();
+        // Set the font size (adjust as needed)
+        doc.setFontSize(12); // You might need to adjust this based on content length
+
+        // Add user's profile information to the PDF
+        if (employeeData) {
+            doc.text(
+                `Employee Name: ${employeeData.firstName} ${
+                    employeeData.middleName || ""
+                } ${employeeData.lastName}`,
+                10,
+                10
+            );
+
+            // Add a line break
+            doc.text("", 10, 20);
+        }
+
+        // Add attendance logs to the PDF
+        if (attendanceHistory.length > 0) {
+            // Define table header
+            const header = ["Date", "Time In", "Time Out", "Status"];
+
+            // Generate table data
+            const tableData = attendanceHistory.map((log) => [
+                log.date,
+                log.timeIn || "-",
+                log.timeOut || "-",
+                log.status,
+            ]);
+
+            // Add table to the PDF
+            doc.autoTable({
+                head: [header],
+                body: tableData,
+                theme: "grid",
+                styles: { fontSize: 12 },
+                startY: 30, // Start the table below the profile information
+            });
+        }
+
+        // Trigger the download of the PDF
+        doc.save(
+            `${employeeData.firstName} ${employeeData.middleName || ""} ${
+                employeeData.lastName
+            }_attendance_logs.pdf`
+        );
+    };
 
     return (
         <div className="content">
             <div className="main">
-                <h1 className="navbar__top-title">Welcome, <span className="employee__highlight-name">{employeeData && employeeData.firstName}</span></h1>
+                <h1 className="navbar__top-title">
+                    Welcome,{" "}
+                    <span className="employee__highlight-name">
+                        {employeeData && employeeData.firstName}
+                    </span>
+                </h1>
                 <div className="profile__main">
                     {employeeData && (
                         <div className="profile__main-body">
                             <div className="employee__profile">
-                                <img src={employeeData.image} alt="Employee" className="employee__profile-img"/>
+                                <img
+                                    src={employeeData.image}
+                                    alt="Employee"
+                                    className="employee__profile-img"
+                                />
                             </div>
                             <div className="profile__content">
                                 <p className="profile__name-txt">
@@ -330,27 +441,37 @@ const Profile = () => {
                                         employeeData.middleName || ""
                                     } ${employeeData.lastName}`}
                                 </p>
-                                <p className="profile__status-txt">Status Today</p>
-                                <p className="profile__status-bar"><span className="dot">&#8226;</span> Present</p>
+                                <p className="profile__status-txt">
+                                    Status Today
+                                </p>
+                                <p className="profile__status-bar">
+                                    <span className="dot">&#8226;</span> Present
+                                </p>
                             </div>
                         </div>
                     )}
                     <div className="profile__stats">
                         <div className="profile__attendance">
                             <p className="profile__total">{totalDays} days</p>
-                            <p className="profile__stats-title">Total Attendance</p>
+                            <p className="profile__stats-title">
+                                Total Attendance
+                            </p>
                         </div>
                         <div className="profile__hours">
-                            <p className="profile__total">{formattedTotalTimeWithoutDecimal} hrs</p>
+                            <p className="profile__total">
+                                {formattedTotalTimeWithoutDecimal} hrs
+                            </p>
                             <p className="profile__stats-title">Total Hours</p>
                         </div>
                     </div>
-                
-                    <div className="profile__history">
-                        <hr/>
-                        <p className="profile__history-title">Recent Attendance History</p>
 
-                        <hr/>
+                    <div className="profile__history">
+                        <hr />
+                        <p className="profile__history-title">
+                            Recent Attendance History
+                        </p>
+
+                        <hr />
                         <div className="profile__sections">
                             <p>Date</p>
                             <p>Time In</p>
@@ -359,43 +480,68 @@ const Profile = () => {
                         </div>
                         <div className="profile__result-history">
                             <div className="profile__history-column">
-                                {attendanceHistory.slice().reverse().map((entry, index) => (
-                                    <p key={index}>{entry.date}</p>
-                                ))}
+                                {attendanceHistory
+                                    .slice()
+                                    .reverse()
+                                    .map((entry, index) => (
+                                        <p key={index}>{entry.date}</p>
+                                    ))}
                             </div>
                             <div className="profile__history-column">
-                                {attendanceHistory.slice().reverse().map((entry, index) => (
-                                    <p key={index}>{entry.timeIn || "-"}</p>
-                                ))}
+                                {attendanceHistory
+                                    .slice()
+                                    .reverse()
+                                    .map((entry, index) => (
+                                        <p key={index}>{entry.timeIn || "-"}</p>
+                                    ))}
                             </div>
                             <div className="profile__history-column">
-                                {attendanceHistory.slice().reverse().map((entry, index) => (
-                                    <p key={index}>{entry.timeOut || "-"}</p>
-                                ))}
+                                {attendanceHistory
+                                    .slice()
+                                    .reverse()
+                                    .map((entry, index) => (
+                                        <p key={index}>
+                                            {entry.timeOut || "-"}
+                                        </p>
+                                    ))}
                             </div>
                             <div className="profile__history-column">
-                                {attendanceHistory.slice().reverse().map((entry, index) => (
-                                    <p key={index}>{entry.status}</p>
-                                ))}
+                                {attendanceHistory
+                                    .slice()
+                                    .reverse()
+                                    .map((entry, index) => (
+                                        <p key={index}>{entry.status}</p>
+                                    ))}
                             </div>
                         </div>
                     </div>
-                    
                 </div>
-                <hr/>
+                <hr />
                 {/* Additional fields can be displayed as needed */}
-                <button className="timeout__btn"
+                <button
+                    className="timeout__btn"
                     onClick={() =>
                         handleTimeoutRecord(new Date().toISOString())
                     }
                     disabled={timeoutRecorded}
                 >
                     Timeout
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="timeout__icon">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth="1.5"
+                        stroke="currentColor"
+                        className="timeout__icon"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"
+                        />
                     </svg>
                 </button>
-
+                <button onClick={handleDownloadPersonalLog}>Test</button>
             </div>
         </div>
     );
