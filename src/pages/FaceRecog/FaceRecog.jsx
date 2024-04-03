@@ -13,100 +13,118 @@ const FaceRecog = () => {
     const [attendanceStatus, setAttendanceStatus] = useState({});
     const navigate = useNavigate();
     let recognitionInterval;
-
+  
     useEffect(() => {
-        startVideo();
-        loadModels();
-
-        return () => {
-            stopRecognition();
-        };
+      startVideo();
+      loadModels();
+  
+      return () => {
+        stopRecognition();
+      };
     }, []);
-
+  
     const startVideo = () => {
-        navigator.mediaDevices
-            .getUserMedia({ video: true })
-            .then((stream) => {
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                }
-            })
-            .catch((error) => {
-                console.log("Error accessing camera: ", error);
-            });
+      navigator.mediaDevices
+        .getUserMedia({ video: true })
+        .then((stream) => {
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        })
+        .catch((error) => {
+          console.log("Error accessing camera: ", error);
+        });
     };
-
+  
     const loadModels = async () => {
-        try {
-            await Promise.all([
-                faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
-                faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
-                faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
-                faceapi.nets.ssdMobilenetv1.loadFromUri("/models"),
-            ]);
-            startFaceRecognition();
-        } catch (error) {
-            console.error("Error loading models:", error);
-        }
+      try {
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+          faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
+          faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
+          faceapi.nets.ssdMobilenetv1.loadFromUri("/models"),
+        ]);
+        startFaceRecognition();
+      } catch (error) {
+        console.error("Error loading models:", error);
+      }
     };
-
+  
     const startFaceRecognition = async () => {
-        // Ensure the recognitionInterval is not already running
-        if (!recognitionInterval) {
-            recognitionInterval = setInterval(async () => {
-                try {
-                    // Check if videoRef.current is defined and if it has a video property
-                    if (videoRef.current && videoRef.current.video) {
-                        const video = videoRef.current.video;
-
-                        // Check if the video stream is loaded
-                        if (video.readyState === 4) {
-                            console.log("Video stream is loaded");
-                            const canvas = faceapi.createCanvasFromMedia(video);
-                            const displaySize = {
-                                width: video.width,
-                                height: video.height,
-                            };
-                            faceapi.matchDimensions(canvas, displaySize);
-
-                            const detections = await faceapi
-                                .detectAllFaces(video)
-                                .withFaceLandmarks()
-                                .withFaceDescriptors();
-
-                            console.log(
-                                "Number of faces detected:",
-                                detections.length
-                            );
-
-                            if (detections.length === 1) {
-                                const recognizedUserId =
-                                    await getRecognizedUserId(
-                                        detections[0].descriptor
-                                    );
-                                if (recognizedUserId) {
-                                    console.log(
-                                        `Recognized user: ${recognizedUserId}`
-                                    );
-                                    navigate(`/profile/${recognizedUserId}`, {
-                                        state: { userId: recognizedUserId },
-                                    });
-
-                                    stopRecognition();
-                                }
-                            } else {
-                                console.log("No face detected");
-                                setShowNoFaceMessage(true);
-                                setRecognizedName("");
-                                setAttendanceStatus({});
-                            }
-                        }
+      // Ensure the recognitionInterval is not already running
+      if (!recognitionInterval) {
+        recognitionInterval = setInterval(async () => {
+          try {
+            if (videoRef.current && videoRef.current.video) {
+              const video = videoRef.current.video;
+  
+              if (video.readyState === 4) {
+                console.log("Video stream is loaded");
+                const canvas = faceapi.createCanvasFromMedia(video);
+                const displaySize = {
+                  width: video.width,
+                  height: video.height,
+                };
+                faceapi.matchDimensions(canvas, displaySize);
+  
+                const detections = await faceapi
+                  .detectAllFaces(video)
+                  .withFaceLandmarks()
+                  .withFaceDescriptors();
+  
+                console.log(
+                  "Number of faces detected:",
+                  detections.length
+                );
+  
+                if (detections.length === 1) {
+                  const [face] = detections;
+                  const { leftEye, rightEye } = face.landmarks;
+  
+                  // Implement blink detection logic here (replace placeholder)
+                  let blinkDetected = false; // Placeholder for blink detection
+                  // ... (logic to analyze eye landmark distances and update blinkDetected)
+  
+                  const recognizedUserId = await getRecognizedUserId(
+                    face.descriptor
+                  );
+                  if (recognizedUserId) {
+                    console.log(
+                      `Recognized user: ${recognizedUserId}`
+                    );
+                    if (blinkDetected) {
+                      // Blink test passed, navigate
+                      navigate(`/profile/${recognizedUserId}`, {
+                        state: { userId: recognizedUserId },
+                      });
+                      stopRecognition();
+                    } else {
+                      console.log("Perform blink test by closing both eyes briefly.");
                     }
-                } catch (error) {
-                    console.error("Error detecting face: ", error);
+                  } else {
+                    console.log("No matching user found");
+                    setBlinkCount(0); // Reset blink count if no user found
+                  }
+                } else {
+                  console.log("No face detected");
+                  setShowNoFaceMessage(true);
+                  setRecognizedName("");
+                  setAttendanceStatus({});
+                  setBlinkCount(0); // Reset blink count if no face detected
                 }
-            }, 500);
-        }
+              }
+            }
+          } catch (error) {
+            console.error("Error detecting face: ", error);
+          }
+        }, 500);
+      }
+    };
+  
+    // Implement blink count state and logic to update it based on eye closure analysis
+    let blinkCount = 0;
+    const setBlinkCount = (count) => {
+      blinkCount = count;
     };
 
     const stopRecognition = () => {
