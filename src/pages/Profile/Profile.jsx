@@ -19,6 +19,8 @@ const Profile = () => {
     const [attendanceStatus, setAttendanceStatus] = useState(null);
     const [timeoutRecorded, setTimeoutRecorded] = useState();
     const [attendanceHistory, setAttendanceHistory] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10);
     const [attendanceLogs, setAttendanceLogs] = useState([]);
     const expectedWorkHours = 8;
 
@@ -49,6 +51,26 @@ const Profile = () => {
             fetchAttendanceHistory(userId);
         }
     }, [userId]);
+
+    // Calculate total pages
+    const totalPages = Math.ceil(attendanceHistory.length / itemsPerPage);
+
+    // Calculate index of the last item on the current page
+    const indexOfLastItem = currentPage * itemsPerPage;
+
+    // Calculate index of the first item on the current page
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+
+    // Slice the attendance history array to display only items for the current page
+    const currentItems = attendanceHistory
+        .slice()
+        .reverse()
+        .slice(indexOfFirstItem, indexOfLastItem);
+
+    // Function to handle page change
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+    };
 
     const fetchEmployeeData = (userId) => {
         try {
@@ -257,6 +279,10 @@ const Profile = () => {
             console.error("Error fetching attendance history: ", error);
         }
     };
+
+    const totalAbsences = attendanceHistory.filter(
+        (entry) => entry.status === "Absent"
+    ).length;
 
     const checkAttendanceStatus = (employeeData) => {
         console.log("Checking attendance status...");
@@ -537,6 +563,14 @@ const Profile = () => {
                             </p>
                             <p className="profile__stats-title">Total Hours</p>
                         </div>
+                        <div className="profile__attendance">
+                            <p className="profile__total">
+                                {totalAbsences} absents
+                            </p>
+                            <p className="profile__stats-title">
+                                Total Absence
+                            </p>
+                        </div>
                     </div>
 
                     <div className="profile__history">
@@ -552,41 +586,39 @@ const Profile = () => {
                             <p>Time Out</p>
                             <p>Status</p>
                         </div>
-                        <div className="profile__result-history">
-                            <div className="profile__history-column">
-                                {attendanceHistory
-                                    .slice()
-                                    .reverse()
-                                    .map((entry, index) => (
-                                        <p key={index}>{entry.date}</p>
-                                    ))}
-                            </div>
-                            <div className="profile__history-column">
-                                {attendanceHistory
-                                    .slice()
-                                    .reverse()
-                                    .map((entry, index) => (
-                                        <p key={index}>{entry.timeIn || "-"}</p>
-                                    ))}
-                            </div>
-                            <div className="profile__history-column">
-                                {attendanceHistory
-                                    .slice()
-                                    .reverse()
-                                    .map((entry, index) => (
-                                        <p key={index}>
-                                            {entry.timeOut || "-"}
-                                        </p>
-                                    ))}
-                            </div>
-                            <div className="profile__history-column">
-                                {attendanceHistory
-                                    .slice()
-                                    .reverse()
-                                    .map((entry, index) => (
-                                        <p key={index}>{entry.status}</p>
-                                    ))}
-                            </div>
+                        <>
+                            {currentItems.map((entry, index) => (
+                                <div className="profile__result-history">
+                                    <div className="profile__history-column">
+                                        <p>{entry.date}</p>
+                                    </div>
+                                    <div className="profile__history-column">
+                                        <p>{entry.timeIn || "-"}</p>
+                                    </div>
+                                    <div className="profile__history-column">
+                                        <p>{entry.timeOut || "-"}</p>
+                                    </div>
+                                    <div className="profile__history-column">
+                                        <p>{entry.status}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </>
+                        <div className="pagination-container">
+                            {/* Render pagination buttons */}
+                            {Array.from({ length: totalPages }, (_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => handlePageChange(i + 1)}
+                                    className={
+                                        i + 1 === currentPage
+                                            ? "pagination-btn pagination-active"
+                                            : "pagination-btn"
+                                    }
+                                >
+                                    {i + 1}
+                                </button>
+                            ))}
                         </div>
                     </div>
                 </div>

@@ -106,6 +106,10 @@
     font-weight: 700;
 }
 
+.profile__history-column {
+    width: 8ch;
+}
+
 hr {
     outline: none;
     background-color: var(--clr-gray);
@@ -134,7 +138,7 @@ hr {
     border: 1px solid var(--clr-light-gray);
     background-color: var(--clr-light-gray);
     color: var(--clr-dark-blue);
-    border-radius: 0.5rem;
+    /* border-radius: 0.5rem; */
     padding: 0.5rem;
     font-weight: 600;
 }
@@ -166,4 +170,27 @@ hr {
     width: var(--size-2xl);
     height: var(--size-2xl);
     color: var(--clr-red);
+}
+
+.pagination-container {
+    padding-top: 2rem;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+}
+
+.pagination-btn {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--clr-primary);
+    border-radius: 1rem;
+    transition: background-color 0.3s;
+}
+
+.pagination-btn:hover {
+    background-color: #f7b13760;
+}
+
+.pagination-active {
+    background-color: #f7b13760;
 }
