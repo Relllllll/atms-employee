@@ -20,6 +20,13 @@ const Profile = () => {
     const [timeoutRecorded, setTimeoutRecorded] = useState();
     const [attendanceHistory, setAttendanceHistory] = useState([]);
     const [attendanceLogs, setAttendanceLogs] = useState([]);
+    const expectedWorkHours = 8;
+
+    useEffect(() => {
+        if (attendanceLogs.length > 0 && expectedWorkHours && userId) {
+            handleHoursWorked(attendanceLogs, expectedWorkHours, userId);
+        }
+    }, [attendanceLogs, expectedWorkHours, userId]);
 
     useEffect(() => {
         const recognizedUserId = location.pathname.split("/profile/")[1];
@@ -66,7 +73,6 @@ const Profile = () => {
                         ([date, log]) => ({ date, ...log })
                     );
                     setAttendanceLogs(logsArray);
-                    setStatusToday(getStatusForToday(logsArray));
                 }
             });
         } catch (error) {
@@ -134,32 +140,27 @@ const Profile = () => {
         get(attendanceRef)
             .then((snapshot) => {
                 const attendanceData = snapshot.val();
-                console.log("Fetched attendance data:", attendanceData);
 
                 // Get the list of dates from attendance data
                 const dates = Object.keys(attendanceData || {}).map(
                     (dateString) => new Date(dateString)
                 );
-                console.log("Date list:", dates);
 
                 // Sort the dates in ascending order
                 dates.sort((a, b) => b.getTime() - a.getTime());
 
                 // Find the last attendance date
                 const lastAttendanceDate = dates[dates.length - 1];
-                console.log("Last attendance date:", lastAttendanceDate);
 
                 // Convert dates to Date objects for comparison
                 const lastAttendance = new Date(lastAttendanceDate);
                 const latestAttendance = new Date(date);
-                console.log("Latest attendance date:", latestAttendance);
 
                 // Check if there is a gap between the last attendance and the latest attendance
                 const skippedDates = getSkippedDates(
                     lastAttendance,
                     latestAttendance
                 );
-                console.log("Skipped dates:", skippedDates);
 
                 // Mark absent for skipped dates if they don't already exist
                 skippedDates.forEach((skippedDate) => {
@@ -167,9 +168,8 @@ const Profile = () => {
                     const formattedDate = skippedDate
                         .toISOString()
                         .split("T")[0];
-                    console.log("Checking date:", formattedDate);
+
                     if (!(formattedDate in attendanceData)) {
-                        console.log("Marking absent for date:", formattedDate);
                         update(attendanceRef, {
                             [formattedDate]: { status: "Absent" },
                         })
@@ -186,10 +186,7 @@ const Profile = () => {
                                 )
                             );
                     } else {
-                        console.log(
-                            "Attendance already exists for date:",
-                            formattedDate
-                        );
+                        console.log();
                     }
                 });
             })
@@ -208,7 +205,7 @@ const Profile = () => {
 
             onValue(attendanceRef, (snapshot) => {
                 const attendanceData = snapshot.val();
-                console.log("Attendance history:", attendanceData); // Log the fetched attendance history
+                // Log the fetched attendance history
                 if (attendanceData) {
                     const history = Object.entries(attendanceData).map(
                         ([date, data]) => {
@@ -270,7 +267,7 @@ const Profile = () => {
             let newAttendanceStatus;
 
             // Check if the current hour is within work hours (8 AM to 5 PM)
-            if (currentHour >= 5 && currentHour <= 23) {
+            if (currentHour >= 1 && currentHour <= 23) {
                 newAttendanceStatus = "Present";
                 console.log("Present");
             } else {
@@ -303,24 +300,101 @@ const Profile = () => {
         setTimeoutRecorded(true);
         console.log("Timeout recorded:", timeOut);
 
-        // Update the timeout in the database
+        // Get current date
+        const currentDate = new Date().toISOString().split("T")[0];
+
+        // Fetch attendance data for the current date
         if (userId) {
-            const currentDate = new Date().toISOString().split("T")[0];
             const database = getDatabase();
             const attendanceRef = ref(
                 database,
                 `employees/${userId}/attendance/${currentDate}`
             );
 
-            update(attendanceRef, { timeOut })
-                .then(() => console.log("Timeout updated in the database"))
+            get(attendanceRef)
+                .then((snapshot) => {
+                    const attendanceData = snapshot.val();
+                    if (attendanceData && attendanceData.timeIn) {
+                        const timeIn = attendanceData.timeIn;
+                        console.log("TimeIn for the day:", timeIn);
+
+                        // Update the timeout in the database
+                        const attendanceRef = ref(
+                            database,
+                            `employees/${userId}/attendance/${currentDate}`
+                        );
+
+                        update(attendanceRef, { timeOut })
+                            .then(() =>
+                                console.log("Timeout updated in the database")
+                            )
+                            .catch((error) =>
+                                console.error(
+                                    "Error updating timeout in the database: ",
+                                    error
+                                )
+                            );
+                    } else {
+                        console.log("No timeIn record found for the day.");
+                    }
+                })
                 .catch((error) =>
-                    console.error(
-                        "Error updating timeout in the database: ",
-                        error
-                    )
+                    console.error("Error fetching attendance data: ", error)
                 );
         }
+    };
+    const handleHoursWorked = (attendanceLogs, expectedWorkHours, userId) => {
+        attendanceLogs.forEach((log) => {
+            if (log.status === "Present") {
+                // Calculate the total hours worked for the day
+                const timeIn = new Date(log.timeIn);
+                const timeOut = new Date(log.timeOut);
+                const hoursWorked = (timeOut - timeIn) / (1000 * 60 * 60); // Convert milliseconds to hours
+
+                // Check if the total hours worked is less than the expected work hours
+                if (hoursWorked < expectedWorkHours) {
+                    console.log(`Undertime on ${log.date}`);
+                    const database = getDatabase();
+                    const currentDate = log.date; // Assuming log.date is the date in YYYY-MM-DD format
+
+                    const attendanceRef = ref(
+                        database,
+                        `employees/${userId}/attendance/${currentDate}`
+                    );
+
+                    // Update the status in the database to undertime
+                    update(attendanceRef, { status: "Undertime" })
+                        .then(() =>
+                            console.log(
+                                `Updated undertime status for ${currentDate}`
+                            )
+                        )
+                        .catch((error) =>
+                            console.error("Error updating status:", error)
+                        );
+                } else if (hoursWorked > expectedWorkHours) {
+                    console.log(`Overtime on ${log.date}`);
+                    const database = getDatabase();
+                    const currentDate = log.date; // Assuming log.date is the date in YYYY-MM-DD format
+
+                    const attendanceRef = ref(
+                        database,
+                        `employees/${userId}/attendance/${currentDate}`
+                    );
+
+                    // Update the status in the database to overtime
+                    update(attendanceRef, { status: "Overtime" })
+                        .then(() =>
+                            console.log(
+                                `Updated overtime status for ${currentDate}`
+                            )
+                        )
+                        .catch((error) =>
+                            console.error("Error updating status:", error)
+                        );
+                }
+            }
+        });
     };
 
     const calculateTotalStats = () => {
