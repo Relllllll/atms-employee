@@ -370,6 +370,8 @@ const Profile = () => {
         }
     };
     const handleHoursWorked = (attendanceLogs, expectedWorkHours, userId) => {
+        let totalAttendance = 0;
+
         attendanceLogs.forEach((log) => {
             if (log.status === "Present") {
                 // Calculate the total hours worked for the day
@@ -398,6 +400,7 @@ const Profile = () => {
                         .catch((error) =>
                             console.error("Error updating status:", error)
                         );
+                    totalAttendance++;
                 } else if (hoursWorked > expectedWorkHours) {
                     console.log(`Overtime on ${log.date}`);
                     const database = getDatabase();
@@ -418,9 +421,13 @@ const Profile = () => {
                         .catch((error) =>
                             console.error("Error updating status:", error)
                         );
+                    totalAttendance++;
+                } else {
+                    totalAttendance++;
                 }
             }
         });
+        return totalAttendance;
     };
 
     const calculateTotalStats = () => {
@@ -461,6 +468,13 @@ const Profile = () => {
             formattedTotalTime: `${formattedTotalTime}.${decimalMinutes}${decimalSeconds}`,
         };
     };
+
+    const totalAttendance = attendanceHistory.filter(
+        (entry) =>
+            entry.status === "Present" ||
+            entry.status === "Undertime" ||
+            entry.status === "Overtime"
+    ).length;
 
     const { formattedTotalTime, totalDays } = calculateTotalStats();
     const formattedTotalTimeWithoutDecimal = formattedTotalTime.split(".")[0];
@@ -552,7 +566,9 @@ const Profile = () => {
                     )}
                     <div className="profile__stats">
                         <div className="profile__attendance">
-                            <p className="profile__total">{totalDays} days</p>
+                            <p className="profile__total">
+                                {totalAttendance} days
+                            </p>
                             <p className="profile__stats-title">
                                 Total Attendance
                             </p>
