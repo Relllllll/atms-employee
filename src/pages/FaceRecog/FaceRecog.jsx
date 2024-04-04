@@ -9,6 +9,7 @@ import "./FaceRecog.css";
 const FaceRecog = () => {
     const videoRef = useRef();
     const [showNoFaceMessage, setShowNoFaceMessage] = useState(false);
+    const [blinked, setBlinked] = useState(false);
     const [recognizedName, setRecognizedName] = useState("");
     const [attendanceStatus, setAttendanceStatus] = useState({});
     const navigate = useNavigate();
@@ -55,11 +56,9 @@ const FaceRecog = () => {
         if (!recognitionInterval) {
             recognitionInterval = setInterval(async () => {
                 try {
-                    // Check if videoRef.current is defined and if it has a video property
                     if (videoRef.current && videoRef.current.video) {
                         const video = videoRef.current.video;
 
-                        // Check if the video stream is loaded
                         if (video.readyState === 4) {
                             console.log("Video stream is loaded");
                             const canvas = faceapi.createCanvasFromMedia(video);
@@ -80,25 +79,51 @@ const FaceRecog = () => {
                             );
 
                             if (detections.length === 1) {
-                                const recognizedUserId =
-                                    await getRecognizedUserId(
-                                        detections[0].descriptor
-                                    );
-                                if (recognizedUserId) {
-                                    console.log(
-                                        `Recognized user: ${recognizedUserId}`
-                                    );
-                                    navigate(`/profile/${recognizedUserId}`, {
-                                        state: { userId: recognizedUserId },
-                                    });
+                                const [face] = detections;
+                                const { leftEye, rightEye } = face.landmarks;
 
-                                    stopRecognition();
+                                // Calculate distances between certain landmarks of the eyes
+                                const leftEyeAspectRatio =
+                                    calculateEyeAspectRatio(leftEye);
+                                const rightEyeAspectRatio =
+                                    calculateEyeAspectRatio(rightEye);
+
+                                // Check if both eyes are closed
+                                const blinkDetected =
+                                    leftEyeAspectRatio < BLINK_THRESHOLD &&
+                                    rightEyeAspectRatio < BLINK_THRESHOLD;
+
+                                if (blinkDetected) {
+                                    // Perform additional actions if blink is detected
+                                    setBlinked(true);
                                 }
-                            } else {
-                                console.log("No face detected");
-                                setShowNoFaceMessage(true);
-                                setRecognizedName("");
-                                setAttendanceStatus({});
+
+                                if (setBlinked) {
+                                    const recognizedUserId =
+                                        await getRecognizedUserId(
+                                            detections[0].descriptor
+                                        );
+                                    if (recognizedUserId) {
+                                        console.log(
+                                            `Recognized user: ${recognizedUserId}`
+                                        );
+                                        navigate(
+                                            `/profile/${recognizedUserId}`,
+                                            {
+                                                state: {
+                                                    userId: recognizedUserId,
+                                                },
+                                            }
+                                        );
+
+                                        stopRecognition();
+                                    } else {
+                                        console.log("No face detected");
+                                        setShowNoFaceMessage(true);
+                                        setRecognizedName("");
+                                        setAttendanceStatus({});
+                                    }
+                                }
                             }
                         }
                     }
@@ -108,6 +133,41 @@ const FaceRecog = () => {
             }, 500);
         }
     };
+
+    const calculateEyeAspectRatio = (eyeLandmarks) => {
+        if (!eyeLandmarks || eyeLandmarks.length < 6) {
+            // Return a default value or handle the case where landmarks are not detected
+            return 0;
+        }
+
+        const leftInner = eyeLandmarks[1];
+        const leftOuter = eyeLandmarks[5];
+        const rightInner = eyeLandmarks[2];
+        const rightOuter = eyeLandmarks[4];
+
+        // Calculate eye width and height using distanceBetweenPoints function
+        const leftEyeWidth = distanceBetweenPoints(leftInner, leftOuter);
+        const leftEyeHeight = distanceBetweenPoints(leftInner, leftOuter);
+
+        const rightEyeWidth = distanceBetweenPoints(rightInner, rightOuter);
+        const rightEyeHeight = distanceBetweenPoints(rightInner, rightOuter);
+
+        // Calculate eye aspect ratio
+        const leftEAR = leftEyeHeight / leftEyeWidth;
+        const rightEAR = rightEyeHeight / rightEyeWidth;
+
+        return (leftEAR + rightEAR) / 2;
+    };
+
+    // Function to calculate distance between two points
+    const distanceBetweenPoints = (point1, point2) => {
+        return Math.sqrt(
+            Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2)
+        );
+    };
+
+    // Set a threshold for blink detection
+    const BLINK_THRESHOLD = 0.2;
 
     const stopRecognition = () => {
         clearInterval(recognitionInterval);
@@ -202,14 +262,18 @@ const FaceRecog = () => {
         }
     };
 
-
     return (
         <div className="faceRecog">
             <Webcam className="faceRecog-video" ref={videoRef} />
             {showNoFaceMessage && (
                 <p className="faceRecog-prompt">No user detected</p>
             )}
-            <button className="ticket-button" onClick={() => navigate('/ticket-creation')}>Create Ticket</button>
+            <button
+                className="ticket-button"
+                onClick={() => navigate("/ticket-creation")}
+            >
+                Create Ticket
+            </button>
         </div>
     );
 };
