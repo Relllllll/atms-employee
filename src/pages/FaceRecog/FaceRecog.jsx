@@ -272,7 +272,7 @@ const FaceRecog = () => {
                 className="ticket-button"
                 onClick={() => navigate("/ticket-creation")}
             >
-                Create Ticket
+                Create Report
             </button>
         </div>
     );
