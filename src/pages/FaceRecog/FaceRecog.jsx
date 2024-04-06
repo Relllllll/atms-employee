@@ -240,7 +240,7 @@ const FaceRecog = () => {
                             );
 
                             // Adjust your threshold based on your use case
-                            if (bestMatch.distance < 0.6) {
+                            if (bestMatch.distance < 0.4) {
                                 console.log(
                                     `Recognized user: ${bestMatch.userId}`
                                 );
