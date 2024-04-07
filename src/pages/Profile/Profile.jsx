@@ -25,12 +25,6 @@ const Profile = () => {
     const expectedWorkHours = 8;
 
     useEffect(() => {
-        if (attendanceLogs.length > 0 && expectedWorkHours && userId) {
-            handleHoursWorked(attendanceLogs, expectedWorkHours, userId);
-        }
-    }, [attendanceLogs, expectedWorkHours, userId]);
-
-    useEffect(() => {
         const recognizedUserId = location.pathname.split("/profile/")[1];
 
         if (recognizedUserId) {
@@ -369,29 +363,6 @@ const Profile = () => {
                 );
         }
     };
-    const handleHoursWorked = (attendanceLogs, expectedWorkHours, userId) => {
-        let totalAttendance = 0;
-
-        attendanceLogs.forEach((log) => {
-            if (log.status === "Present") {
-                // Calculate the total hours worked for the day
-                const timeIn = new Date(log.timeIn);
-                const timeOut = new Date(log.timeOut);
-                const hoursWorked = (timeOut - timeIn) / (1000 * 60 * 60); // Convert milliseconds to hours
-
-                // Check if the total hours worked is less than the expected work hours
-                if (hoursWorked < expectedWorkHours) {
-                    console.log(`Undertime on ${log.date}`);
-                    totalAttendance++;
-                } else {
-                    totalAttendance++;
-                }
-            } else if (log.status === "Absent") {
-                totalAttendance++;
-            }
-        });
-        return totalAttendance;
-    };
 
     const calculateTotalStats = () => {
         let totalMilliseconds = 0;
@@ -433,10 +404,7 @@ const Profile = () => {
     };
 
     const totalAttendance = attendanceHistory.filter(
-        (entry) =>
-            entry.status === "Present" ||
-            entry.status === "Undertime" ||
-            entry.status === "Overtime"
+        (entry) => entry.status === "Present"
     ).length;
 
     const { formattedTotalTime, totalDays } = calculateTotalStats();
