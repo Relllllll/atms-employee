@@ -18,10 +18,9 @@ const Ticket = () => {
         e.preventDefault();
         const date = new Date().toLocaleDateString();
         const time = new Date().toLocaleTimeString();
-        const localDateTime = `${date} ${time}`;
         // Here you can call the function to send a ticket message
-        console.log("Sending Message:", name, message, localDateTime);
-        sendTicketMessage(name, message, localDateTime);
+        console.log("Sending Message:", name, message, date, time);
+        sendTicketMessage(name, message, date, time);
         // Optionally, you can clear the form fields after submitting
         setName("");
         setMessage("");
