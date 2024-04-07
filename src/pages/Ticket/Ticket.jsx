@@ -7,7 +7,7 @@ const Ticket = () => {
     const [message, setMessage] = useState("");
 
     const handleNameChange = (e) => {
-    setName(e.target.value);
+        setName(e.target.value);
     };
 
     const handleMessageChange = (e) => {
@@ -17,9 +17,11 @@ const Ticket = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         const date = new Date().toLocaleDateString();
+        const time = new Date().toLocaleTimeString();
+        const localDateTime = `${date} ${time}`;
         // Here you can call the function to send a ticket message
-        console.log("Sending Message:", name, message, date);
-        sendTicketMessage(name, message, date);
+        console.log("Sending Message:", name, message, localDateTime);
+        sendTicketMessage(name, message, localDateTime);
         // Optionally, you can clear the form fields after submitting
         setName("");
         setMessage("");
@@ -30,7 +32,9 @@ const Ticket = () => {
             <h1>Create Report</h1>
             <form onSubmit={handleSubmit} className="ticket-form">
                 <div className="form-group">
-                    <label htmlFor="name" className="label">Id Number:</label>
+                    <label htmlFor="name" className="label">
+                        Id Number:
+                    </label>
                     <input
                         type="text"
                         id="name"
@@ -38,11 +42,12 @@ const Ticket = () => {
                         onChange={handleNameChange}
                         required
                         className="input-field"
-                        
                     />
                 </div>
                 <div className="form-group">
-                    <label htmlFor="message" className="label">Message:</label>
+                    <label htmlFor="message" className="label">
+                        Message:
+                    </label>
                     <textarea
                         id="message"
                         value={message}
@@ -51,7 +56,9 @@ const Ticket = () => {
                         className="input-field message-field"
                     ></textarea>
                 </div>
-                <button className="send-email-btn" type="submit">Send Report</button>
+                <button className="send-email-btn" type="submit">
+                    Send Report
+                </button>
             </form>
         </div>
     );
