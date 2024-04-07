@@ -382,49 +382,12 @@ const Profile = () => {
                 // Check if the total hours worked is less than the expected work hours
                 if (hoursWorked < expectedWorkHours) {
                     console.log(`Undertime on ${log.date}`);
-                    const database = getDatabase();
-                    const currentDate = log.date; // Assuming log.date is the date in YYYY-MM-DD format
-
-                    const attendanceRef = ref(
-                        database,
-                        `employees/${userId}/attendance/${currentDate}`
-                    );
-
-                    // Update the status in the database to undertime
-                    update(attendanceRef, { status: "Undertime" })
-                        .then(() =>
-                            console.log(
-                                `Updated undertime status for ${currentDate}`
-                            )
-                        )
-                        .catch((error) =>
-                            console.error("Error updating status:", error)
-                        );
-                    totalAttendance++;
-                } else if (hoursWorked > expectedWorkHours) {
-                    console.log(`Overtime on ${log.date}`);
-                    const database = getDatabase();
-                    const currentDate = log.date; // Assuming log.date is the date in YYYY-MM-DD format
-
-                    const attendanceRef = ref(
-                        database,
-                        `employees/${userId}/attendance/${currentDate}`
-                    );
-
-                    // Update the status in the database to overtime
-                    update(attendanceRef, { status: "Overtime" })
-                        .then(() =>
-                            console.log(
-                                `Updated overtime status for ${currentDate}`
-                            )
-                        )
-                        .catch((error) =>
-                            console.error("Error updating status:", error)
-                        );
                     totalAttendance++;
                 } else {
                     totalAttendance++;
                 }
+            } else if (log.status === "Absent") {
+                totalAttendance++;
             }
         });
         return totalAttendance;
