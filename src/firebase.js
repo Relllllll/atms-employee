@@ -22,14 +22,13 @@ import { getAuth } from "firebase/auth"
 //     measurementId: "G-0S7WL2XX1G",
 // };
 const firebaseConfig = {
-  apiKey: "AIzaSyCj3fmuMRcOr0QHUsU5taLyLU2_wn5AHGQ",
-  authDomain: "atms-capstone.firebaseapp.com",
-  databaseURL: "https://atms-capstone-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "atms-capstone",
-  storageBucket: "atms-capstone.appspot.com",
-  messagingSenderId: "63113783163",
-  appId: "1:63113783163:web:53bd1f96ea9168f1f5ffde",
-  measurementId: "G-G7N1DGNXGX",
+  apiKey: "AIzaSyAAV4rGL7pa4xcu8qN7F7-HgA546JnvPe4",
+  authDomain: "atms-projct.firebaseapp.com",
+  projectId: "atms-projct",
+  storageBucket: "atms-projct.firebasestorage.app",
+  messagingSenderId: "536849326258",
+  appId: "1:536849326258:web:fb11211ce28ce37f3269ab",
+  measurementId: "G-9EC1DX7D64"
 };
 
 // Initialize Firebase
