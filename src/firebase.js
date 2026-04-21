@@ -24,12 +24,14 @@ import { getAuth } from "firebase/auth"
 const firebaseConfig = {
   apiKey: "AIzaSyAAV4rGL7pa4xcu8qN7F7-HgA546JnvPe4",
   authDomain: "atms-projct.firebaseapp.com",
+  databaseURL: "https://atms-projct-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "atms-projct",
   storageBucket: "atms-projct.firebasestorage.app",
   messagingSenderId: "536849326258",
   appId: "1:536849326258:web:fb11211ce28ce37f3269ab",
   measurementId: "G-9EC1DX7D64"
 };
+
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
